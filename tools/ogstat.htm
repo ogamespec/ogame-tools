@@ -1,0 +1,47 @@
+<html>
+<head>
+<LINK rel="stylesheet" type="text/css" href="formate.css">
+<meta http-equiv='content-type' content='text/html; charset=utf-8' />
+<TITLE>Разбор статистики Ogame.ru</TITLE>
+<SCRIPT src="ogstat.js" type="text/javascript" language="JavaScript"></SCRIPT>
+
+<script>
+// Обработчик нажатия на кнопку.
+function onSumbitButton ()
+{
+    var text = stat_form.text.value;
+    parseStat (text);    // обработать
+    printStat (document.getElementById('result'));    // вывести результат.
+}
+
+// Очистить поле ввода и результат.
+function onClearButton ()
+{
+    stat_form.text.value = '';
+    res = document.getElementById('result');
+    res.innerHTML = '';
+}
+</script>
+</head>
+
+<body>
+
+<center>
+<br>
+<form action='#' name='stat_form'>
+<table>
+<tr><td class='c'>Вставьте одну или более страниц со Статистикой:</td></tr>
+<tr><th><textarea cols='150' rows='20' name='text'> </textarea></th></tr>
+<tr><td>
+        <input type=button value='Обработать' onClick='onSumbitButton();' >
+        <input type=button value='Очистить' onClick='onClearButton();' >
+</td></tr>
+</table>
+</form>
+
+<div id='result'></div>
+<div id='debug'></div>
+</center>
+
+</body>
+</html>

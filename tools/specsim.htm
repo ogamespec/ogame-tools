@@ -1,0 +1,1484 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="keywords" content="SpecSim Спецсим Симулятор OGame Ogame" />
+    <meta name="description" content="SpecSim - боевой симулятор для браузерной игры OGame" />
+    <meta name="author" content="Andorianin Ogame.ru Team" />
+    <title>SpecSim Online</title>
+    <link type="text/css" href="../css/com.css" rel="stylesheet" /> 
+    <script type="text/javascript" src="jquery/jquery-1.4.min.js"></script>
+    <script type="text/javascript" src="jquery/wtooltip.min.js"></script> 
+    <script type="text/javascript" src="jquery/ui/ui.core.js"></script>
+    <script type="text/javascript" src="jquery/ui/ui.draggable.js"></script>
+    <script type="text/javascript" src="jquery/ui/ui.resizable.js"></script>
+    <script type="text/javascript" src="jquery/ui/ui.dialog.js"></script>
+    <script type="text/javascript" src="jquery/ui/ui.tabs.js"></script>
+    <script type="text/javascript" src="jquery/ui/ui.slider.js"></script>
+    <script type="text/javascript" src="jquery/ui/ui.accordion.js"></script>
+    <script type="text/javascript" src="jquery/ui/effects.core.js"></script>
+    <script type="text/javascript" src="jquery/ui/effects.slide.js"></script>
+    <script type="text/javascript" src="jquery/ui/effects.drop.js"></script>
+    <script type="text/javascript" src="jquery/external/bgiframe/jquery.bgiframe.js"></script>
+    <script type="text/javascript" src="jquery/jquery-buttons.js"></script>
+
+<script type="text/javascript">
+
+function readCookie(name) {
+    var nameEQ = name + "=";
+    var ca = document.cookie.split(';');
+    for(var i=0;i < ca.length;i++) {
+        var c = ca[i];
+        while (c.charAt(0)==' ') c = c.substring(1,c.length);
+        if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+    }
+    return null;
+}
+
+function createCookie(name,value,days) {
+    if (days) {
+        var date = new Date();
+        date.setTime(date.getTime()+(days*24*60*60*1000));
+        var expires = "; expires="+date.toGMTString();
+    }
+    else var expires = "";
+    document.cookie = name+"="+value+expires+"; path=/";
+}
+
+var comtheme = readCookie ("comtheme");
+if (comtheme == null) comtheme = "trontastic";
+
+// Подключить стиль оформления.
+document.write ("<link type=\"text/css\" href=\"jquery/themes/"+comtheme+"/ui.all.css\" rel=\"stylesheet\" />");
+
+</script>
+</head>
+
+<body onload="InitSpecSim();">
+
+<script type="text/javascript"> 
+
+var Version = "0.09";
+
+// Настройки симулятора.
+var SimConfig = new Array ();
+LoadSimConfig();
+
+var fleetParam = [ // ТТХ Флота. (m, k, d, cargo, speed, cons)
+ [ 4000, 10, 5, 5000, 5000, 10 ],
+ [ 12000, 25, 5, 25000, 7500, 50 ],
+ [ 4000, 10, 50, 50, 12500, 20 ],
+ [ 10000, 25, 150, 100, 10000, 75 ],
+ [ 27000, 50, 400, 800, 15000, 300 ],
+ [ 60000, 200, 1000, 1500, 10000, 500 ],
+ [ 30000, 100, 50, 7500, 2500, 1000 ],
+ [ 16000, 10, 1, 20000, 2000, 300 ],
+ [ 1000, 0, 0, 5, 100000000, 1 ],
+ [ 75000, 500, 1000, 500, 4000, 1000 ],
+ [ 2000, 1, 1, 0, 0, 0 ],
+ [ 110000, 500, 2000, 2000, 5000, 1000 ], 
+ [ 9000000, 50000, 200000, 1000000, 100, 1 ], 
+ [ 70000, 400, 700, 750, 10000, 250 ]
+];
+
+var defenseParam = [ // ТТХ Обороны.
+ [ 2000, 20, 80, 0, 0, 0 ],
+ [ 2000, 25, 100, 0, 0, 0 ],
+ [ 8000, 100, 250, 0, 0, 0 ],
+ [ 35000, 200, 1100, 0, 0, 0 ],
+ [ 8000, 500, 150, 0, 0, 0 ],
+ [ 100000, 300, 3000, 0, 0, 0 ],
+ [ 20000, 2000, 1, 0, 0, 0 ],
+ [ 100000, 10000, 1, 0, 0, 0 ],
+];
+
+// Строки для локализации.
+// -------------------------------- Русский -------------------------------------
+if (SimConfig['gui_lang'] == "ru") {
+    var TechNames = {
+     202: "Малый транспорт", 203: "Большой транспорт", 204: "Лёгкий истребитель", 205: "Тяжёлый истребитель", 
+     206: "Крейсер", 207: "Линкор", 208: "Колонизатор", 209: "Переработчик", 210: "Шпионский зонд", 
+     211: "Бомбардировщик", 212: "Солнечный спутник", 213: "Уничтожитель", 214: "Звезда смерти", 215: "Линейный крейсер",
+
+     401: "Ракетная установка", 402: "Лёгкий лазер", 403: "Тяжёлый лазер", 404: "Пушка Гаусса", 405: "Ионное орудие", 
+     406: "Плазменное орудие", 407: "Малый щитовой купол", 408: "Большой щитовой купол",
+
+     1: "Рудник по добыче металла", 2: "Рудник по добыче кристалла", 3: "Синтезатор дейтерия",
+     4: "Солнечная электростанция", 12: "Термоядерная электростанция", 14: "Фабрика роботов",
+     15: "Фабрика нанитов", 21: "Верфь", 22: "Хранилище металла", 23: "Хранилище кристалла", 24: "Ёмкость для дейтерия",
+     31: "Исследовательская лаборатория", 33: "Терраформер", 34: "Склад альянса",
+     41: "Лунная база", 42: "Сенсорная фаланга", 43: "Ворота", 44: "Ракетная шахта",
+
+     106: "Шпионаж", 108: "Компьютерная технология", 109: "Оружейная технология", 110: "Щитовая технология",
+     111: "Броня космических кораблей", 113: "Энергетическая технология", 114: "Гиперпространственная технология",
+     115: "Реактивный двигатель", 117: "Импульсный двигатель", 118: "Гиперпространственный двигатель",
+     120: "Лазерная технология", 121: "Ионная технология", 122: "Плазменная технология",
+     123: "Межгалактическая исследовательская сеть", 124: "Экспедиционная технология", 199: "Гравитационная технология"
+    };
+    var FleetShort = [ "М. трансп.", "Б. трансп.", "Л. истр.", "Т. истр.", "Крейсер", "Линк", "Колонизатор", "Переработчик", "Шп. зонд", "Бомб.", "Солн. спутник", "Уничт.", "ЗС", "Лин. Кр." ];
+    var DefenseShort = [ "РУ", "Лёг. лазер", "Тяж. лазер", "Гаусс", "Ион", "Плазма", "М. купол", "Б. купол" ];
+    var SlotCaption = [ "Обороняющийся", "Флот атакующего" ];
+    var loca = {
+     LOCA_TECHS_WEAP: "Вооружение", LOCA_TECHS_SHLD: "Щиты", LOCA_TECHS_HULL: "Броня",
+     LOCA_SLOT_TYPE: "Тип", LOCA_SLOT_AMOUNT: "Кол-во.", LOCA_SLOT_WEAP: "Воор.:", LOCA_SLOT_SHLD: "Щиты", LOCA_SLOT_HULL: "Броня",
+     LOCA_SPY_RESON: "Сырьё на", LOCA_SPY_PLAYER: "Игрок", LOCA_SPY_MOON: "Луна",
+     LOCA_SPY_M: "металла",  LOCA_SPY_K: "кристалла", LOCA_SPY_D: "дейтерия",
+     LOCA_SPY_FLEET: "Флоты",  LOCA_SPY_DEFENSE: "Оборона", LOCA_SPY_BUILDINGS: "Постройки", LOCA_SPY_RESEARCH: "Исследования",
+     LOCA_BUTTON_TIMES: "Время полёта", LOCA_BUTTON_EDIT: "Изменить", LOCA_BUTTON_DELETE: "Удалить", LOCA_BUTTON_DEFAULT: "По умолчанию",
+     LOCA_MAIN_ATTACKERS: "Атакующие", LOCA_MAIN_DEFENDERS: "Обороняющиеся",
+     LOCA_MAIN_ADDSLOT: "Добавить слот", LOCA_MAIN_SIMULATE: "Симулировать", LOCA_MAIN_SETTINGS: "Настройки", LOCA_MAIN_PERMALINK: "Постоянная ссылка",
+     LOCA_MAXFLEET_TITLE: "Ошибка",
+     LOCA_MAXFLEET_CAPTION: "Достигнуто максимальное количество флотов.",
+     LOCA_MAXFLEET_TEXT: "В бою может участвовать не более 16 атакующих или обороняющихся флотов (включая игрока, на чью планету было произведено нападение). Удалите несколько флотов, или измените их состав. ",
+
+     LOCA_ADDFLEET_FLEET: "Флот",
+     LOCA_ADDFLEET_DEFENSE: "Оборона",
+     LOCA_ADDFLEET_RESEARCH: "Технологии",
+     LOCA_ADDFLEET_REPORT: "Из доклада",
+     LOCA_ADDFLEET_WARSHIPS: "Боевые корабли",
+     LOCA_ADDFLEET_CIVILSHIPS: "Гражданские корабли",
+     LOCA_ADDFLEET_SPYHEADER: "Текст шпионского доклада:",
+     LOCA_ADDFLEET_SPYBUTTON: "Вставить из доклада",
+     LOCA_ADDFLEET_PLAYERNAME: "Имя игрока",
+     LOCA_ADDFLEET_COORDS: "Координаты",
+     LOCA_ADDFLEET_PLUNDER: "Добыча",
+     LOCA_ADDFLEET_TITLE0: "Добавление нового",
+     LOCA_ADDFLEET_TITLE1: "Редактирование",
+     LOCA_ADDFLEET_TITLE2: "атакующего",
+     LOCA_ADDFLEET_TITLE3: "обороняющегося",
+     LOCA_ADDFLEET_BUTTON0: "Очистить",
+     LOCA_ADDFLEET_BUTTON1: "Добавить",
+
+     LOCA_OPT_0: "Настройки SpecSim", LOCA_OPT_1: "Настройки Отображения",
+     LOCA_OPT_2: "Формат доклада",
+     LOCA_OPT_2_1: "Краткий доклад", LOCA_OPT_2_2: "OGame 0.84", LOCA_OPT_2_3: "OGame Redesign 1.0+", LOCA_OPT_2_4: "XML", LOCA_OPT_2_5: "Отладочная информация",
+     LOCA_OPT_3: "Язык интерфейса", LOCA_OPT_4: "Язык докладов", LOCA_OPT_4_2: "Стиль оформления",
+     LOCA_OPT_5: "Настройки Симуляции",
+     LOCA_OPT_6: "Исход боя",
+     LOCA_OPT_6_1: "Усреднённые результаты", LOCA_OPT_6_2: "Лучший для атакующего", LOCA_OPT_6_3: "Лучший для обороняющегося", LOCA_OPT_6_4: "Худший для атакующего", LOCA_OPT_6_5: "Худший для обороняющегося",
+     LOCA_OPT_7: "Количество симуляций",
+     LOCA_OPT_8: "Флот в Обломки", LOCA_OPT_9: "Оборона в Обломки", LOCA_OPT_10: "Скорострел", LOCA_OPT_11: "Ускорение Вселенной",
+     LOCA_OPT_12: "Ядро симулятора",
+     LOCA_OPT_ON: "Вкл.", LOCA_OPT_OFF: "Откл.",
+
+     LOCA_TIMES_TITLE: "Время полёта и затраты дейтерия", LOCA_TIMES_DURATION: "Время полёта", LOCA_TIMES_CONSUMPTION: "Затраты дейтерия", LOCA_TIMES_CARGO: "Грузоподъёмность",
+     LOCA_HEAD_TITLE: "Спецсим Онлайн"
+    };
+}
+// -------------------------------- English -------------------------------------
+else {
+    var TechNames = {
+     202: "Small Cargo", 203: "Large Cargo", 204: "Light Fighter", 205: "Heavy Fighter", 
+     206: "Cruiser", 207: "Battleship", 208: "Colony Ship", 209: "Recycler", 210: "Espionage Probe", 
+     211: "Bomber", 212: "Solar Satellite", 213: "Destroyer", 214: "Deathstar", 215: "Battlecruiser",
+
+     401: "Rocket Launcher", 402: "Light Laser", 403: "Heavy Laser", 404: "Gauss Cannon", 405: "Ion Cannon", 
+     406: "Plasma Turret", 407: "Small Shield Dome", 408: "Large Shield Dome",
+
+     1: "Metal Mine", 2: "Crystal Mine", 3: "Deuterium Synthesizer",
+     4: "Solar Plant", 12: "Fusion Reactor", 14: "Robotics Factory",
+     15: "Nanite Factory", 21: "Shipyard", 22: "Metal Storage", 23: "Crystal Storage", 24: "Deuterium Tank",
+     31: "Research Lab", 33: "Terraformer", 34: "Alliance Depot",
+     41: "Lunar Base", 42: "Sensor Phalanx", 43: "Jump Gate", 44: "Missile Silo",
+
+     106: "Espionage Technology", 108: "Computer Technology", 109: "Weapons Technology", 110: "Shielding Technology",
+     111: "Armour Technology", 113: "Energy Technology", 114: "Hyperspace Technology",
+     115: "Combustion Drive", 117: "Impulse Drive", 118: "Hyperspace Drive",
+     120: "Laser Technology", 121: "Ion Technology", 122: "Plasma Technology",
+     123: "Intergalactic Research Network", 124: "Expedition Technology", 199: "Graviton Technology"
+    };
+    var FleetShort = [ "S.Cargo", "L.Cargo", "L.Fighter", "H.Fighter", "Cruiser", "Battleship", "Col.Ship", "Recy.", "Esp.Probe", "Bomber", "Sol. Sat", "Dest.", "Deathstar", "Battlecr." ];
+    var DefenseShort = [ "R.Launcher", "L.Laser", "H.Laser", "Gauss", "Ion C.", "Plasma", "S.Dome", "L.Dome" ];
+    var SlotCaption = [ "Defender", "Attacker" ];
+    var loca = {
+     LOCA_TECHS_WEAP: "Weapons", LOCA_TECHS_SHLD: "Shields", LOCA_TECHS_HULL: "Armour",
+     LOCA_SLOT_TYPE: "Type", LOCA_SLOT_AMOUNT: "Total", LOCA_SLOT_WEAP: "Weapons", LOCA_SLOT_SHLD: "Shields", LOCA_SLOT_HULL: "Armour",
+     LOCA_SPY_RESON: "Resources on",  LOCA_SPY_PLAYER: "Player",  LOCA_SPY_MOON: "Moon",
+     LOCA_SPY_M: "Metal", LOCA_SPY_K: "Crystal", LOCA_SPY_D: "Deuterium",
+     LOCA_SPY_FLEET: "Fleets", LOCA_SPY_DEFENSE: "Defense", LOCA_SPY_BUILDINGS: "Buildings", LOCA_SPY_RESEARCH: "Research",
+     LOCA_BUTTON_TIMES: "Flight duration, deuterium consumption and cargo", LOCA_BUTTON_EDIT: "Edit", LOCA_BUTTON_DELETE: "Delete", LOCA_BUTTON_DEFAULT: "Set default",
+     LOCA_MAIN_ATTACKERS: "Attackers", LOCA_MAIN_DEFENDERS: "Defenders",
+     LOCA_MAIN_ADDSLOT: "Add formation", LOCA_MAIN_SIMULATE: "Sim Battle", LOCA_MAIN_SETTINGS: "Settings", LOCA_MAIN_PERMALINK: "Permalink to battle",
+     LOCA_MAXFLEET_TITLE: "Error",
+     LOCA_MAXFLEET_CAPTION: "Maximum amount of fleets has been reached.",
+     LOCA_MAXFLEET_TEXT: "There can be only 16 attackers or defenders. Remove or edit existing fleet formations. ",
+
+     LOCA_ADDFLEET_FLEET: "Fleet",
+     LOCA_ADDFLEET_DEFENSE: "Defense",
+     LOCA_ADDFLEET_RESEARCH: "Research",
+     LOCA_ADDFLEET_REPORT: "Spy Report",
+     LOCA_ADDFLEET_WARSHIPS: "Combat ships",
+     LOCA_ADDFLEET_CIVILSHIPS: "Civil ships",
+     LOCA_ADDFLEET_SPYHEADER: "Copy & paste spy report here:",
+     LOCA_ADDFLEET_SPYBUTTON: "Process report",
+     LOCA_ADDFLEET_PLAYERNAME: "Player Name",
+     LOCA_ADDFLEET_COORDS: "Coordinates",
+     LOCA_ADDFLEET_PLUNDER: "Resources",
+     LOCA_ADDFLEET_TITLE0: "Add new",
+     LOCA_ADDFLEET_TITLE1: "Edit",
+     LOCA_ADDFLEET_TITLE2: "attacker",
+     LOCA_ADDFLEET_TITLE3: "defender",
+     LOCA_ADDFLEET_BUTTON0: "Clear",
+     LOCA_ADDFLEET_BUTTON1: "Done",
+
+     LOCA_OPT_0: "SpecSim Settings", LOCA_OPT_1: "Display Settings",
+     LOCA_OPT_2: "Report Format",
+     LOCA_OPT_2_1: "Quick report", LOCA_OPT_2_2: "OGame 0.84", LOCA_OPT_2_3: "OGame Redesign 1.0+", LOCA_OPT_2_4: "XML", LOCA_OPT_2_5: "Debug info",
+     LOCA_OPT_3: "GUI Language", LOCA_OPT_4: "Report Language", LOCA_OPT_4_2: "Theme",
+     LOCA_OPT_5: "Simulation Settings",
+     LOCA_OPT_6: "Battle Case",
+     LOCA_OPT_6_1: "Average", LOCA_OPT_6_2: "Best for attacker", LOCA_OPT_6_3: "Best for defender", LOCA_OPT_6_4: "Worst for attacker", LOCA_OPT_6_5: "Worst for defender",
+     LOCA_OPT_7: "Number of simulations",
+     LOCA_OPT_8: "Fleet in Debris", LOCA_OPT_9: "Defense in Debris", LOCA_OPT_10: "Rapidfire", LOCA_OPT_11: "Speed Factor",
+     LOCA_OPT_12: "SpecSim kernel",
+     LOCA_OPT_ON: "On", LOCA_OPT_OFF: "Off",
+
+     LOCA_TIMES_TITLE: "Flight duration, deuterium consumption and cargo", LOCA_TIMES_DURATION: "Flight duration", LOCA_TIMES_CONSUMPTION: "Deuterium consumption", LOCA_TIMES_CARGO: "Cargo left",
+     LOCA_HEAD_TITLE: "SpecSim Online"
+    };
+}
+
+// <! --------------- Вспомогательные функции ------------------------- !>
+
+function php_number_format( number, decimals, dec_point, thousands_sep ) {
+    // http://kevin.vanzonneveld.net
+    var n = number, c = isNaN(decimals = Math.abs(decimals)) ? 2 : decimals;
+    var d = dec_point == undefined ? ',' : dec_point;
+    var t = thousands_sep == undefined ? '.' : thousands_sep, s = n < 0 ? '-' : '';
+    var i = parseInt(n = Math.abs(+n || 0).toFixed(c)) + '', j = (j = i.length) > 3 ? j % 3 : 0;
+    return s + (j ? i.substr(0, j) + t : '') + i.substr(j).replace(/(\d{3})(?=\d)/g, '$1' + t) + (c ? d + Math.abs(n - i).toFixed(c).slice(2) : '');
+}
+
+function php_str_replace(search, replace, subject) {
+    // http://kevin.vanzonneveld.net
+    var s = subject;
+    var ra = r instanceof Array, sa = s instanceof Array;
+    var f = [].concat(search);
+    var r = [].concat(replace);
+    var i = (s = [].concat(s)).length;
+    var j = 0;
+    while (j = 0, i--) {
+        if (s[i]) {
+            while (s[i] = (s[i]+'').split(f[j]).join(ra ? r[j] || '' : r[0]), ++j in f){};
+        }
+    }
+    return sa ? s : s[0];
+}
+
+function nicenum (number)
+{
+    return php_number_format(number,0,",",".");
+}
+
+function getParam(sParamName){
+    var Params = location.search.substring(1).split("&"); // отсекаем «?» и вносим переменные и их значения в массив
+    var variable = "";
+    for (var i = 0; i < Params.length; i++){ // пробегаем весь массив
+        if (Params[i].split("=")[0] == sParamName){ // если это искомая переменная — бинго!
+            if (Params[i].split("=").length > 1) variable = Params[i].split("=")[1]; // если значение параметра задано, то возвращаем его
+            return variable;
+        }
+    }
+    return "";
+}
+
+function _utf8_decode (utftext)
+{
+    var string = "";
+    var i = 0;
+    var c = c1 = c2 = 0;
+ 		
+    while ( i < utftext.length ) {
+        c = utftext.charCodeAt(i);
+ 
+        if (c < 128) {
+            string += String.fromCharCode(c);
+            i++;
+        }
+        else if((c > 191) && (c < 224)) {
+            c2 = utftext.charCodeAt(i+1);
+            string += String.fromCharCode(((c & 31) << 6) | (c2 & 63));
+            i += 2;
+        }
+        else {
+            c2 = utftext.charCodeAt(i+1);
+            c3 = utftext.charCodeAt(i+2);
+            string += String.fromCharCode(((c & 15) << 12) | ((c2 & 63) << 6) | (c3 & 63));
+            i += 3;
+        }
+    }
+    return string;
+}
+
+// <! --------------- Управление слотами ------------------------- !>
+
+var aslots = new Array ();        // Слоты атакующих
+var dslots = new Array ();        // Слоты обороняющихся, оборона может быть только в нулевом слоте.
+var anum = 0, dnum = 0;        // Количество слотов атакующих и обороняющихся.
+var addslot = new Array ();      // Слот для добавления. Все данные из диалога попадают вначале сюда, а потом добавляются в основные списки.
+
+function AddSlot (attacker)
+{
+    var pre, tab;
+    if (attacker) { pre = "a" + anum + "_"; tab = aslots; }    // Настроить индексацию.
+    else { pre = "d" + dnum + "_"; tab = dslots; }
+    for (n=0; n<14; n++) tab[pre + "f" + n] = 0;    // Очистить новый слот.
+    for (n=0; n<8; n++) tab[pre + "d" + n] = 0;
+    tab[pre + "m"] = tab[pre + "k"] = tab[pre + "d"] = 0;
+    for (n=0; n<14; n++) if (addslot["f"+n]) tab[pre + "f" + n] = addslot["f"+n];
+    for (n=0; n<8; n++) if (addslot["d"+n]) tab[pre + "d" + n] = addslot["d"+n];
+    tab[pre + "weap"] = addslot["weap"]; tab[pre + "shld"] = addslot["shld"]; tab[pre + "hull"] = addslot["hull"];
+    tab[pre + "prop"] = addslot["prop"]; tab[pre + "imp"] = addslot["imp"]; tab[pre + "hyper"] = addslot["hyper"];
+    tab[pre + "g"] = addslot["g"]; tab[pre + "s"] = addslot["s"]; tab[pre + "p"] = addslot["p"];
+    tab[pre + "m"] = addslot["m"]; tab[pre + "k"] = addslot["k"]; tab[pre + "d"] = addslot["d"];
+    tab[pre + "name"] = addslot["name"];
+    if (attacker) anum++;
+    else dnum++;
+}
+
+function RemoveSlot (attacker, slotnum)
+{
+    var temp = new Array ();
+    var pre, tab, max, p = 0;
+    if (attacker) { pre = "a"; tab = aslots; max = anum; }    // Настроить индексацию.
+    else { pre = "d"; tab = dslots; max = dnum; }
+    if (slotnum >= max || slotnum < 0) return;
+    for (i=0; i<slotnum; i++, p++) {
+        for (n=0; n<14; n++) temp[pre + p + "_f" + n] = tab[pre + i + "_f" + n];
+        for (n=0; n<8; n++) temp[pre + p + "_d" + n] = tab[pre + i + "_d" + n];
+        temp[pre + p + "_weap"] = tab[pre + i + "_weap"]; temp[pre + p + "_shld"] = tab[pre + i + "_shld"]; temp[pre + p + "_hull"] = tab[pre + i + "_hull"];
+        temp[pre + p + "_prop"] = tab[pre + i + "_prop"]; temp[pre + p + "_imp"] = tab[pre + i + "_imp"]; temp[pre + p + "_hyper"] = tab[pre + i + "_hyper"];
+        temp[pre + p + "_g"] = tab[pre + i + "_g"]; temp[pre + p + "_s"] = tab[pre + i + "_s"]; temp[pre + p + "_p"] = tab[pre + i + "_p"];
+        temp[pre + p + "_m"] = tab[pre + i + "_m"]; temp[pre + p + "_k"] = tab[pre + i + "_k"]; temp[pre + p + "_d"] = tab[pre + i + "_d"];
+        temp[pre + p + "_name"] = tab[pre + i + "_name"]; 
+    }
+    for (i=slotnum+1; i<max; i++, p++) {
+        for (n=0; n<14; n++) temp[pre + p + "_f" + n] = tab[pre + i + "_f" + n];
+        for (n=0; n<8; n++) temp[pre + p + "_d" + n] = tab[pre + i + "_d" + n];
+        temp[pre + p + "_weap"] = tab[pre + i + "_weap"]; temp[pre + p + "_shld"] = tab[pre + i + "_shld"]; temp[pre + p + "_hull"] = tab[pre + i + "_hull"];
+        temp[pre + p + "_prop"] = tab[pre + i + "_prop"]; temp[pre + p + "_imp"] = tab[pre + i + "_imp"]; temp[pre + p + "_hyper"] = tab[pre + i + "_hyper"];
+        temp[pre + p + "_g"] = tab[pre + i + "_g"]; temp[pre + p + "_s"] = tab[pre + i + "_s"]; temp[pre + p + "_p"] = tab[pre + i + "_p"];
+        temp[pre + p + "_m"] = tab[pre + i + "_m"]; temp[pre + p + "_k"] = tab[pre + i + "_k"]; temp[pre + p + "_d"] = tab[pre + i + "_d"];
+        temp[pre + p + "_name"] = tab[pre + i + "_name"]; 
+    }
+    if (attacker) { aslots = temp; anum--; }
+    else { dslots = temp; dnum--; }
+}
+
+function UpdateSlot (attacker, slotnum)
+{
+    var pre, tab;
+    if (attacker) { pre = "a" + slotnum + "_"; tab = aslots; }    // Настроить индексацию.
+    else { pre = "d" + slotnum + "_"; tab = dslots; }
+    for (n=0; n<14; n++) tab[pre + "f" + n] = addslot["f"+n];
+    for (n=0; n<8; n++) tab[pre + "d" + n] = addslot["d"+n];
+    tab[pre + "weap"] = addslot["weap"]; tab[pre + "shld"] = addslot["shld"]; tab[pre + "hull"] = addslot["hull"];
+    tab[pre + "prop"] = addslot["prop"]; tab[pre + "imp"] = addslot["imp"]; tab[pre + "hyper"] = addslot["hyper"];
+    tab[pre + "g"] = addslot["g"]; tab[pre + "s"] = addslot["s"]; tab[pre + "p"] = addslot["p"];
+    tab[pre + "m"] = addslot["m"]; tab[pre + "k"] = addslot["k"]; tab[pre + "d"] = addslot["d"];
+    tab[pre + "name"] = addslot["name"];
+}
+
+function debugShowAddslot ()
+{
+    var res = "";
+    for (n=0; n<14; n++) if (addslot["f"+n]) res += TechNames[202+n] + ": " + addslot["f"+n] + "<br/>";
+    for (n=0; n<8; n++) if (addslot["d"+n]) res += TechNames[401+n] + ": " + addslot["d"+n] + "<br/>";
+    res += addslot["m"] + ":" + addslot["k"] + ":" + addslot["d"] + "<br/>";
+    res += addslot["g"] + ":" + addslot["s"] + ":" + addslot["p"] + "<br/>";
+    res += addslot["weap"] + "-" + addslot["shld"] + "-" + addslot["hull"] + "<br/>";
+    res += addslot["prop"] + "-" + addslot["imp"] + "-" + addslot["hyper"] + "<br/>";
+    $("#debug").html (res);
+}
+
+// <! ----------------- Динамическая генерация элементов страницы ------------------------ !>
+
+// Обновить обработчики событий для динамически-создаваемых элементов управления.
+function UpdateSlotControls ()
+{
+    jQuery.each ($("a[class*=ui-icon-clock]"), function () { $(this).unbind ('click'); });
+    jQuery.each ($("a[class*=ui-icon-pencil]"), function () { $(this).unbind ('click'); });
+    jQuery.each ($("a[class*=ui-icon-trash]"), function () { $(this).unbind ('click'); });
+    jQuery.each ($("a[class*=ui-icon-clock]"), function () { 
+        $(this).wTooltip({content: loca["LOCA_BUTTON_TIMES"] })
+        $(this).click ( function() { 
+            TimesDialog ( parseInt ($(this).attr("attacker")), parseInt ($(this).attr("slot")) );
+        })
+    });
+    jQuery.each ($("a[class*=ui-icon-pencil]"), function () { 
+        $(this).wTooltip({content: loca["LOCA_BUTTON_EDIT"] })
+        $(this).click ( function() { 
+            EditSlotDialog ( parseInt ($(this).attr("attacker")), parseInt ($(this).attr("slot")) );
+        })
+    });
+    jQuery.each ($("a[class*=ui-icon-trash]"), function () {
+        $(this).wTooltip({content: loca["LOCA_BUTTON_DELETE"] })
+        $(this).click ( function() { 
+            DeleteSlot ( parseInt ($(this).attr("attacker")), parseInt ($(this).attr("slot")) );
+        })
+    });
+}
+
+// Сгенерировать HTML-код слота.
+function GenSlot (slot, attacker)
+{
+    var pre, tab;
+    var res = "", sum = 0;
+
+    if (attacker && slot >= anum) return "";    // Проверить чтобы не выводился отсутствующий слот.
+    if (!attacker && slot >= dnum) return "";
+
+    if (attacker) { pre = "a" + slot + "_"; tab = aslots; }    // Настроить индексацию.
+    else { pre = "d" + slot + "_"; tab = dslots; }
+
+    for (n=0; n<14; n++) sum += tab[pre + "f" + n];    // Посчитать количество объектов.
+    for (n=0; n<8; n++) sum += tab[pre + "d" + n];
+
+    res += "<th slotnum=\""+slot+"\" attacker=\""+attacker+"\"><table class=\"ui-widget-content ui-corner-all\"><tr>";
+    if (slot == 0 && !attacker) {
+        res += "<th width='1%' style='vertical-align: top;'><table class=\"ui-widget-content ui-corner-all\">" +
+                   "<tr><td><img src='../images/metall_sm.gif'></td><td align=left>" + nicenum(tab[pre+"m"]) + "</td></tr>" +
+                   "<tr><td><img src='../images/kristall_sm.gif'></td><td align=left>" + nicenum(tab[pre+"k"]) + "</td></tr>" +
+                   "<tr><td><img src='../images/deuterium_sm.gif'></td><td align=left>" + nicenum(tab[pre+"d"]) + "</td></tr></table></th>";
+    }
+    res += "<th><br><center>"+SlotCaption[attacker]+" "+tab[pre+"name"]+" (<a href=\"#\">["+tab[pre+"g"]+":"+tab[pre+"s"]+":"+tab[pre+"p"]+"]</a>)<br>";
+    if (sum) {
+        res += loca["LOCA_TECHS_WEAP"]+": "+tab[pre+"weap"]*10+"% "+loca["LOCA_TECHS_SHLD"]+": "+tab[pre+"shld"]*10+"% "+loca["LOCA_TECHS_HULL"]+": "+tab[pre+"hull"]*10+"%";
+        res += "<table class=\"ui-widget-content ui-corner-all\">";
+        res += "<tr class=\"ui-widget-header\"><th>"+loca["LOCA_SLOT_TYPE"]+"</th>";
+        for (n=0; n<14; n++) if (tab[pre+"f"+n] > 0) res += "<th>"+FleetShort[n]+"</th>";
+        for (n=0; n<8; n++) if (tab[pre+"d"+n] > 0) res += "<th>"+DefenseShort[n]+"</th>";
+        res += "</tr>";
+        res += "<tr><th>"+loca["LOCA_SLOT_AMOUNT"]+"</th>";
+        for (n=0; n<14; n++) if (tab[pre+"f"+n] > 0) res += "<th>"+nicenum( tab[pre+"f"+n] )+"</th>";
+        for (n=0; n<8; n++) if (tab[pre+"d"+n] > 0) res += "<th>"+nicenum( tab[pre+"d"+n] )+"</th>";
+        res += "</tr>";
+        res += "<tr><th>"+loca["LOCA_SLOT_WEAP"]+"</th>";
+        for (n=0; n<14; n++) if (tab[pre+"f"+n] > 0) res += "<th>"+nicenum( Math.floor(fleetParam[n][2] *  ((10+parseInt(tab[pre+"weap"]))/10)) )+"</th>";
+        for (n=0; n<8; n++) if (tab[pre+"d"+n] > 0) res += "<th>"+nicenum( Math.floor(defenseParam[n][2] *  ((10+parseInt(tab[pre+"weap"]))/10)) )+"</th>";
+        res += "</tr>";
+        res += "<tr><th>"+loca["LOCA_SLOT_SHLD"]+"</th>";
+        for (n=0; n<14; n++) if (tab[pre+"f"+n] > 0) res += "<th>"+nicenum( Math.floor(fleetParam[n][1] *  ((10+parseInt(tab[pre+"shld"]))/10)) )+"</th>";
+        for (n=0; n<8; n++) if (tab[pre+"d"+n] > 0) res += "<th>"+nicenum( Math.floor(defenseParam[n][1] *  ((10+parseInt(tab[pre+"shld"]))/10)) )+"</th>";
+        res += "</tr>";
+        res += "<tr><th>"+loca["LOCA_SLOT_HULL"]+"</th>";
+        for (n=0; n<14; n++) if (tab[pre+"f"+n] > 0) res += "<th>"+nicenum( Math.floor(fleetParam[n][0] *  ((10+parseInt(tab[pre+"hull"]))/100)) )+"</th>";
+        for (n=0; n<8; n++) if (tab[pre+"d"+n] > 0) res += "<th>"+nicenum( Math.floor(defenseParam[n][0] *  ((10+parseInt(tab[pre+"hull"]))/100)) )+"</th>";
+        res += "</tr>";
+        res += "</table>";
+    }
+    res += "</center></th>";
+    res += "<th width='1%' style='vertical-align: top;'><a class=\"ui-icon ui-icon-clock\" href=\"#\" slot=\""+slot+"\" attacker=\""+attacker+"\"/></th>";
+    res += "<th width='1%' style='vertical-align: top;'><a class=\"ui-icon ui-icon-pencil\" href=\"#\" slot=\""+slot+"\" attacker=\""+attacker+"\"/></th>";
+    res += "<th width='1%' style='vertical-align: top;'><a class=\"ui-icon ui-icon-trash\" href=\"#\" slot=\""+slot+"\" attacker=\""+attacker+"\"/></th></tr>";
+    res += "</table></th>";
+
+    return res;
+}
+
+function UpdateAttackersList ()
+{
+    var res = "";
+    res += "<table width=100%><tr>";
+    for (i=0; i<anum; i++) res += GenSlot (i, 1);
+    res += "</tr></table>";
+    $("#alist").html ( res );
+    UpdateSlotControls ();
+    if (anum) $ ("#a_accordion h3 a").text (loca["LOCA_MAIN_ATTACKERS"] + " (" + anum + ")");
+    else $ ("#a_accordion h3 a").text (loca["LOCA_MAIN_ATTACKERS"]);
+    UpdatePermalink ();
+}
+
+function UpdateDefendersList ()
+{
+    var res = "";
+    res += "<table width=100%><tr>";
+    for (i=0; i<dnum; i++) res += GenSlot (i, 0);
+    res += "</tr></table>";
+    $("#dlist").html ( res );
+    UpdateSlotControls ();
+    if (dnum) $ ("#d_accordion h3 a").text (loca["LOCA_MAIN_DEFENDERS"] + " (" + dnum + ")");
+    else $ ("#d_accordion h3 a").text (loca["LOCA_MAIN_DEFENDERS"]);
+    UpdatePermalink ();
+}
+
+function GenerateSimParams ()
+{
+    var url = "m=" + ((typeof(dslots["d0_m"]) == "undefined")?(0):(dslots["d0_m"])) +
+                  "&k=" + ((typeof(dslots["d0_k"]) == "undefined")?(0):(dslots["d0_k"])) +
+                 "&d=" + ((typeof(dslots["d0_d"]) == "undefined")?(0):(dslots["d0_d"])), pre;
+    url += "&anum=" + anum;
+    url += "&dnum=" + dnum;
+    for (i=0; i<anum; i++) {
+        pre = "a" + i + "_";
+        for (n=0; n<14; n++) if (aslots[pre+"f"+n]) url += "&" + pre + "f" + n + "=" + aslots[pre+"f"+n];
+        url += "&" + pre + "weap=" + aslots[pre+"weap"];
+        url += "&" + pre + "shld=" + aslots[pre+"shld"];
+        url += "&" + pre + "hull=" + aslots[pre+"hull"];
+        url += "&" + pre + "prop=" + aslots[pre+"prop"];
+        url += "&" + pre + "imp=" + aslots[pre+"imp"];
+        url += "&" + pre + "hyper=" + aslots[pre+"hyper"];
+        url += "&" + pre + "g=" + aslots[pre+"g"];
+        url += "&" + pre + "s=" + aslots[pre+"s"];
+        url += "&" + pre + "p=" + aslots[pre+"p"];
+        url += "&" + pre + "name=" + aslots[pre+"name"];
+    }
+    for (i=0; i<dnum; i++) {
+        pre = "d" + i + "_";
+        for (n=0; n<14; n++) if (dslots[pre+"f"+n]) url += "&" + pre + "f" + n + "=" + dslots[pre+"f"+n];
+        if (i == 0) {
+            for (n=0; n<8; n++) if (dslots[pre+"d"+n]) url += "&d_" + "d" + n + "=" + dslots[pre+"d"+n];
+        }
+        url += "&" + pre + "weap=" + dslots[pre+"weap"];
+        url += "&" + pre + "shld=" + dslots[pre+"shld"];
+        url += "&" + pre + "hull=" + dslots[pre+"hull"];
+        url += "&" + pre + "prop=" + dslots[pre+"prop"];
+        url += "&" + pre + "imp=" + dslots[pre+"imp"];
+        url += "&" + pre + "hyper=" + dslots[pre+"hyper"];
+        url += "&" + pre + "g=" + dslots[pre+"g"];
+        url += "&" + pre + "s=" + dslots[pre+"s"];
+        url += "&" + pre + "p=" + dslots[pre+"p"];
+        url += "&" + pre + "name=" + dslots[pre+"name"];
+    }
+    url += "&lang=" + SimConfig['sim_lang'];
+    url += "&gen=" + SimConfig['format'];
+    url += "&simnum=" + SimConfig['simnum'];
+    url += "&bcase=" + SimConfig['simcase'];
+    url += "&rf=" + SimConfig['rapid'];
+    url += "&did=" + SimConfig['did'];
+    url += "&fid=" + SimConfig['fid'];
+
+    return url;
+}
+
+// <! ----------------- Элементы управления ------------------------ !>
+
+var AutoClearDialog = 1;
+var EditMode = 0, UpdatedSlot;
+var AddingAttacker;
+
+// Обработка нажатий на кнопки диалога добавления флота.
+var MyFleetButtons = {};
+MyFleetButtons[loca["LOCA_ADDFLEET_BUTTON1"]] = function() { 
+        var sum = 0;
+
+        if (!EditMode) {
+            // Очистить слот.
+            for (n=0; n<14; n++) addslot["f" + n] = 0;
+            for (n=0; n<8; n++) addslot["d" + n] = 0;
+            addslot["weap"] = addslot["shld"] = addslot["hull"] = 0;
+            addslot["prop"] = addslot["imp"] = addslot["hyper"] = 0;
+            addslot["g"] = addslot["s"] = addslot["p"] = 1;
+            if (AddingAttacker) addslot["name"] = "Attacker" + (anum+1);
+            else addslot["name"] = "Defender" + (dnum+1);
+        }
+
+        // Поместить в слот значения, указанные в диалоге.
+        for (n=0; n<14; n++) {
+            addslot["f" + n] = $("#dialogMyFleet input[name='f"+(202+n)+"']").val();
+            if (addslot["f" + n] == "") addslot["f" + n] = 0;
+        }
+        if (AddingAttacker == 0 && ((!EditMode && dnum == 0) || (EditMode && UpdatedSlot == 0))) {
+            for (n=0; n<8; n++) {
+                addslot["d" + n] = $("#dialogMyFleet input[name='d"+(401+n)+"']").val();
+                if (addslot["d" + n] == "") addslot["d" + n] = 0;
+            }
+        }
+        else {
+            for (n=0; n<8; n++) addslot["d" + n] = 0;
+        }
+        if ($("#dialogMyFleet input[name='name']").val() != "") addslot["name"] = $("#dialogMyFleet input[name='name']").val();
+        addslot["g"] = $("#dialogMyFleet input[name='g']").val(); if (addslot["g"] == "") addslot["g"] = 1;
+        addslot["s"] = $("#dialogMyFleet input[name='s']").val(); if (addslot["s"] == "") addslot["s"] = 1;
+        addslot["p"] = $("#dialogMyFleet input[name='p']").val(); if (addslot["p"] == "") addslot["p"] = 1;
+        addslot["m"] = $("#dialogMyFleet input[name='m']").val(); if (addslot["m"] == "") addslot["m"] = 0;
+        addslot["k"] = $("#dialogMyFleet input[name='k']").val(); if (addslot["k"] == "") addslot["k"] = 0;
+        addslot["d"] = $("#dialogMyFleet input[name='d']").val(); if (addslot["d"] == "") addslot["d"] = 0;
+        addslot["weap"] = $("#dialogMyFleet input[name='t109']").val(); if (addslot["weap"] == "") addslot["weap"] = 0;
+        addslot["shld"] = $("#dialogMyFleet input[name='t110']").val(); if (addslot["shld"] == "") addslot["shld"] = 0;
+        addslot["hull"] = $("#dialogMyFleet input[name='t111']").val(); if (addslot["hull"] == "") addslot["hull"] = 0;
+        addslot["prop"] = $("#dialogMyFleet input[name='t115']").val(); if (addslot["prop"] == "") addslot["prop"] = 0;
+        addslot["imp"] = $("#dialogMyFleet input[name='t117']").val(); if (addslot["imp"] == "") addslot["imp"] = 0;
+        addslot["hyper"] = $("#dialogMyFleet input[name='t118']").val(); if (addslot["hyper"] == "") addslot["hyper"] = 0;
+
+        if (AddingAttacker) addslot["f10"] = 0;    // Солнечные спутники.
+        else {
+            if (EditMode && UpdatedSlot) addslot["f10"] = 0;
+            if (!EditMode && dnum) addslot["f10"] = 0;
+        }
+        for (n=0; n<14; n++) sum += addslot["f" + n];
+        if (AddingAttacker == 0) {
+            for (n=0; n<8; n++) sum += addslot["d" + n];
+        }
+        if (addslot["d6"] > 1) addslot["d6"] = 1;    // Ограничение на купола.
+        if (addslot["d7"] > 1) addslot["d7"] = 1;
+
+        if (AddingAttacker == 0 && dnum == 0 && !EditMode) sum = 1;
+        if (sum || EditMode) {    // Добавляем слот, только если там что-то есть, или это слот дефа #0.
+            if (EditMode) {
+                if (sum == 0) RemoveSlot (AddingAttacker, UpdatedSlot);    // если в слоте ничего нет, то удаляем его.
+                else UpdateSlot (AddingAttacker, UpdatedSlot);
+            }
+            else AddSlot (AddingAttacker);
+            //debugShowAddslot ();
+            if (AddingAttacker) UpdateAttackersList ();
+            else UpdateDefendersList ();
+        }
+
+        if (AutoClearDialog) ClearSlotDialog ();
+        $(this).dialog('close');   
+}
+MyFleetButtons[loca["LOCA_ADDFLEET_BUTTON0"]] = function() { 
+        ClearSlotDialog ();
+}
+
+function InitControls ()
+{
+    // Диалог с ошибкой о переполнении флотов.
+    $(function() { $("#MaxFleets").dialog({   
+        bgiframe: true, modal: true, height: 200, width: 450, zIndex: 3,   
+        autoOpen: false,
+        buttons: { "Ok": function() { $(this).dialog('close'); } }   
+    }); });
+
+    // Диалог расчёта времени полета.
+    $(function() { $("#dialogTimes").dialog({   
+        bgiframe: true, modal: true, height: 250, width: 530, zIndex: 3, 
+        autoOpen: false
+    }); });
+
+    // Диалог настроек.
+    $(function() { $("#dialogSettings").dialog({   
+        bgiframe: true, modal: true, minHeight: 300, width: 620, zIndex: 3, 
+        autoOpen: false,
+        buttons: { "Ok": function() {
+            SimConfig['format'] = $("#dialogSettings select[name='format']").val ();
+            SimConfig['gui_lang'] = $("#dialogSettings select[name='gui_lang']").val ();
+            SimConfig['sim_lang'] = $("#dialogSettings select[name='sim_lang']").val ();
+            comtheme = $("#dialogSettings select[name='sim_theme']").val ();
+            SimConfig['simcase'] = $("#dialogSettings select[name='simcase']").val ();
+            SimConfig['simnum'] = parseInt ($("#dialogSettings input[name='simnum']").val ());
+            if (SimConfig['simnum'] <= 0) SimConfig['simnum'] = 0;
+            if (SimConfig['simnum'] > 100) SimConfig['simnum'] = 100;
+            SimConfig['fid'] = $("#dialogSettings select[name='fid']").val ();
+            SimConfig['did'] = $("#dialogSettings select[name='did']").val ();
+            SimConfig['xspeed'] = $("#dialogSettings select[name='xspeed']").val ();
+            SimConfig['rapid'] = $("#dialogSettings select[name='rapid']").val ();
+            SimConfig['kernel'] = $("#dialogSettings input[name='kernel']").val ();
+            SaveSimConfig ();
+            $(this).dialog('close');
+            window.location.reload ();
+        } }   
+    }); });
+
+    $(function() { $("#dialogMyFleet").dialog({ 
+        bgiframe: true, modal: true, width: 740, minHeight: 470, zIndex: 3,   
+        autoOpen: false,
+        close: function(event, ui) { ClearSlotDialog(); },
+        buttons: MyFleetButtons
+    }); });
+
+    $("#a_accordion").accordion({ 
+        collapsible: true, autoHeight: false, 
+        icons: { 
+            header: "ui-icon-circle-arrow-e", 
+            headerSelected: "ui-icon-circle-arrow-s" 
+        } 
+    }); 
+    $("#d_accordion").accordion({ 
+        collapsible: true, autoHeight: false, 
+        icons: { 
+            header: "ui-icon-circle-arrow-e", 
+            headerSelected: "ui-icon-circle-arrow-s" 
+        } 
+    }); 
+
+    $(".fleetimg").click ( function () {   
+        $(this).children("input").focus ();   
+    });   
+    $(".defimg").click ( function () {   
+        $(this).children("input").focus ();   
+    });   
+    $(".techimg").click ( function () {   
+        $(this).children("input").focus ();   
+    });   
+    $("#a_addfleet").click ( function() { AddSlotDialog (1); });   
+    $("#d_addfleet").click ( function() { AddSlotDialog (0); });   
+    $("#spyreport").click ( function() {
+        spy = SpyReport (document.getElementById("spy").value);
+        LoadSpy (spy);
+        document.getElementById("spy").value = "";
+    });   
+
+    $("#simulate").click ( function() {   
+       target_url = SimConfig['kernel'] + "?" + GenerateSimParams ();
+       var new_win = window.open(target_url,'report','scrollbars=yes,menubar=no,top=0,left=0,toolbar=no,width=620,height=600,resizable=yes');
+       new_win.focus();
+    });
+    $("#settings").click ( function() { SettingsDialog (); });
+    $("#defaultKernel").click ( function() { SetDefaultKernel (); });
+}
+
+// Открыть диалог добавления слота.
+function AddSlotDialog (attacker)
+{
+    if (attacker && anum == 16) { $('#MaxFleets').dialog('open'); return; }
+    if (!attacker && dnum == 16) { $('#MaxFleets').dialog('open'); return; }
+
+    var title = loca["LOCA_ADDFLEET_TITLE0"] + " ";
+    if (attacker) title += loca["LOCA_ADDFLEET_TITLE2"];
+    else title += loca["LOCA_ADDFLEET_TITLE3"];
+    AddingAttacker = attacker;
+    EditMode = 0;
+    $('#dialogMyFleet').dialog('open');
+    $('#dialogMyFleet').dialog('option', 'title', title);
+    $('#dialogMyFleet #tabs').tabs('select', 0);
+    if (attacker || dnum) {
+        $('#dialogMyFleet #tabs').tabs('disable', 1);
+        $('#dialogMyFleet #plunder').hide ();
+    }
+    else {
+        $('#dialogMyFleet #tabs').tabs('enable', 1);
+        $('#dialogMyFleet #plunder').show ();
+    }
+}
+
+// Открыть диалог редактирования слота.
+function EditSlotDialog (attacker, slotnum)
+{
+    var pre, tab;
+    if (attacker) { pre = "a" + slotnum + "_"; tab = aslots; }    // Настроить индексацию.
+    else { pre = "d" + slotnum + "_"; tab = dslots; }
+    var title = loca["LOCA_ADDFLEET_TITLE1"] + " ";
+    if (attacker) title += loca["LOCA_ADDFLEET_TITLE2"] + " ";
+    else title += loca["LOCA_ADDFLEET_TITLE3"] + " ";
+    title += tab[pre+"name"];
+    AddingAttacker = attacker;
+    EditMode = 1; UpdatedSlot = slotnum;
+    $('#dialogMyFleet').dialog('open');
+    $('#dialogMyFleet').dialog('option', 'title', title);
+    $('#dialogMyFleet #tabs').tabs('select', 0);
+    if (attacker || slotnum) {
+        $('#dialogMyFleet #tabs').tabs('disable', 1);
+        $('#dialogMyFleet #plunder').hide ();
+    }
+    else {
+        $('#dialogMyFleet #tabs').tabs('enable', 1);
+        $('#dialogMyFleet #plunder').show ();
+    }
+
+    // Скопировать значения из временного слота в поля ввода.
+    for (n=0; n<14; n++) {
+        $("#dialogMyFleet input[name='f"+(202+n)+"']").val( tab[pre + "f" + n] );
+        if (tab[pre + "f" + n] == 0) $("#dialogMyFleet input[name='f"+(202+n)+"']").val("");
+    }
+    if (attacker == 0 && slotnum == 0) {
+        for (n=0; n<8; n++) {
+            $("#dialogMyFleet input[name='d"+(401+n)+"']").val( tab[pre + "d" + n] );
+            if (tab[pre + "d" + n] == 0) $("#dialogMyFleet input[name='d"+(401+n)+"']").val( "" );
+        }
+    }
+    $("#dialogMyFleet input[name='name']").val( tab[pre + "name"]);
+    $("#dialogMyFleet input[name='g']").val( tab[pre + "g"]);
+    $("#dialogMyFleet input[name='s']").val( tab[pre + "s"]);
+    $("#dialogMyFleet input[name='p']").val( tab[pre + "p"]);
+    $("#dialogMyFleet input[name='m']").val( tab[pre + "m"]); if (tab[pre + "m"] == 0) $("#dialogMyFleet input[name='m']").val("");
+    $("#dialogMyFleet input[name='k']").val( tab[pre + "k"]); if (tab[pre + "k"] == 0) $("#dialogMyFleet input[name='k']").val("");
+    $("#dialogMyFleet input[name='d']").val( tab[pre + "d"]); if (tab[pre + "d"] == 0) $("#dialogMyFleet input[name='d']").val("");
+    $("#dialogMyFleet input[name='t109']").val( tab[pre + "weap"]); if (tab[pre + "weap"] == 0) $("#dialogMyFleet input[name='t109']").val("");
+    $("#dialogMyFleet input[name='t110']").val( tab[pre + "shld"]); if (tab[pre + "shld"] == 0) $("#dialogMyFleet input[name='t110']").val("");
+    $("#dialogMyFleet input[name='t111']").val( tab[pre + "hull"]); if (tab[pre + "hull"] == 0) $("#dialogMyFleet input[name='t111']").val("");
+    $("#dialogMyFleet input[name='t115']").val( tab[pre + "prop"]); if (tab[pre + "prop"] == 0) $("#dialogMyFleet input[name='t115']").val("");
+    $("#dialogMyFleet input[name='t117']").val( tab[pre + "imp"]); if (tab[pre + "imp"] == 0) $("#dialogMyFleet input[name='t117']").val("");
+    $("#dialogMyFleet input[name='t118']").val( tab[pre + "hyper"]); if (tab[pre + "hyper"] == 0) $("#dialogMyFleet input[name='t118']").val("");
+}
+
+// Удалить выбранный слот.
+function DeleteSlot (attacker, slotnum)
+{
+    // Показать анимацию удаления.
+    var options = {};
+    $("th[slotnum='"+slotnum+"'][attacker='"+attacker+"']").hide ("slide", options, 500);
+    RemoveSlot (attacker, slotnum);
+    if (attacker) UpdateAttackersList ();
+    else UpdateDefendersList ();
+}
+
+// Очистить поля ввода.
+function ClearSlotDialog ()
+{
+    $(".fleetimg input").val("");
+    $(".defimg input").val("");
+    $(".techimg input").val("");
+    $("#dialogMyFleet input[name='name']").val("");
+    $("#dialogMyFleet input[name='g']").val(""); $("#dialogMyFleet input[name='s']").val(""); $("#dialogMyFleet input[name='p']").val(""); 
+    $("#dialogMyFleet input[name='m']").val(""); $("#dialogMyFleet input[name='k']").val(""); $("#dialogMyFleet input[name='d']").val(""); 
+    $("#dialogMyFleet input[name='t109']").val(""); $("#dialogMyFleet input[name='t110']").val(""); $("#dialogMyFleet input[name='t111']").val(""); 
+    $("#dialogMyFleet input[name='t115']").val(""); $("#dialogMyFleet input[name='t117']").val(""); $("#dialogMyFleet input[name='t118']").val(""); 
+}
+
+// <! ----------------- Обработка шпионских докладов ------------------------ !>
+
+function SpyReport (s)
+{
+    var res = "";
+    var fleetmap = new Array (202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215 );
+    var defmap = new Array (401, 402, 403, 404, 405, 406, 407, 408, 502, 503 );
+    var buildmap = new Array (1, 2, 3, 4, 12, 14, 15, 21, 22, 23, 24, 31, 33, 34, 41, 42, 43, 44);
+    var techmap = new Array (106, 108, 109, 110, 111, 113, 114, 115, 117, 118, 120, 121, 122, 123, 124, 199);
+    var leveldesc = new Array ( loca["LOCA_SPY_FLEET"], loca["LOCA_SPY_DEFENSE"], loca["LOCA_SPY_BUILDINGS"], loca["LOCA_SPY_RESEARCH"] );
+    var map = new Array ( fleetmap, defmap, buildmap, techmap );
+    var spy = new Array ();
+
+    s = php_str_replace (":", " ", s);
+    s = php_str_replace (".", "", s);
+    spy['counter'] = spy['level'] = 0;
+
+    pos = s.indexOf ( loca["LOCA_SPY_RESON"] );
+    if ( pos == -1 ) return;
+    s = s.substr ( pos );
+
+    // Заголовок доклада
+    matchtab = s.match ( "("+loca["LOCA_SPY_RESON"]+"[\\s]+)([\\w|\\s|\\W]+)([\\[])([0-9]) ([0-9]{1,3}) ([0-9]{1,})([\\]]) ([\\(])"+loca["LOCA_SPY_PLAYER"]+" '(([\\w|\\s|\\W]+))'([\\)])" );
+    arr = jQuery.makeArray (matchtab);
+    pname = jQuery.trim(arr[2]);
+    pos = pname.indexOf ("("+loca["LOCA_SPY_MOON"]+")");
+    if (pos != -1) {
+        pname = jQuery.trim(pname.substr (0, pos));
+        spy['moon'] = 1;
+    }
+    else spy['moon'] = 0;
+    spy['planet'] = pname;
+    spy['player'] = arr[9];
+    spy['g'] = parseInt(arr[4]); spy['s'] = parseInt(arr[5]); spy['p'] = parseInt(arr[6]);
+
+    // Ресурсы.
+    pos = s.indexOf ( loca["LOCA_SPY_M"] ); mkd = s.substr ( pos );
+    matchtab = mkd.match ("("+loca["LOCA_SPY_M"]+"[\\s]+)([0-9]{1,})");
+    arr = jQuery.makeArray (matchtab);
+    spy['m'] = parseInt (arr[2]);
+    pos = s.indexOf ( loca["LOCA_SPY_K"] ); mkd = s.substr ( pos );
+    matchtab = mkd.match ("("+loca["LOCA_SPY_K"]+"[\\s]+)([0-9]{1,})");
+    arr = jQuery.makeArray (matchtab);
+    spy['k'] = parseInt (arr[2]);
+    pos = s.indexOf ( loca["LOCA_SPY_D"] ); mkd = s.substr ( pos );
+    matchtab = mkd.match ("("+loca["LOCA_SPY_D"]+"[\\s]+)([0-9]{1,})");
+    arr = jQuery.makeArray (matchtab);
+    spy['d'] = parseInt (arr[2]);
+
+    // Флот, оборона, постройки, исследования. Не пытайтесь понять этот цикл.
+    for (level=1; level<=4; level++)   {
+        tab = map[level-1];
+        if ( s.indexOf ( leveldesc[level-1] ) == -1) break;
+        for (var i in map[level-1])
+        {
+            pos = s.indexOf ( TechNames[map[level-1][i]] ); obj = s.substr ( pos );
+            matchtab = obj.match ("("+TechNames[map[level-1][i]]+"[\\s]+)([0-9]{1,})");
+            arr = jQuery.makeArray (matchtab);
+            if ( typeof (arr[2]) == "undefined" ) value = 0;
+            else value = parseInt (arr[2]);
+            spy['o'+map[level-1][i]] = value;
+        }
+        spy['level']++;
+    }
+    for (level; level<=4; level++)   {    // Остаток заполнить нулями.
+        tab = map[level-1];
+        for (var i in map[level-1]) spy['o'+map[level-1][i]] = 0;
+    }
+
+    if ( (spy['o41'] + spy['o42'] + spy['o43']) > 0 ) spy['moon'] = 1;
+    return spy;
+}
+
+// Записать значения из доклада в поля диалога.
+function LoadSpy (spy)
+{
+    for (n=0; n<14; n++) {
+        $("#dialogMyFleet input[name='f"+(202+n)+"']").val( spy['o'+(202+n)] );
+        if (spy['o'+(202+n)] == 0) $("#dialogMyFleet input[name='f"+(202+n)+"']").val("");
+    }
+    for (n=0; n<8; n++) {
+        $("#dialogMyFleet input[name='d"+(401+n)+"']").val( spy['o'+(401+n)] );
+        if (spy['o'+(401+n)] == 0) $("#dialogMyFleet input[name='d"+(401+n)+"']").val( "" );
+    }
+    $("#dialogMyFleet input[name='name']").val( spy['player'] );
+    $("#dialogMyFleet input[name='g']").val( spy['g'] );
+    $("#dialogMyFleet input[name='s']").val( spy['s'] );
+    $("#dialogMyFleet input[name='p']").val( spy['p'] );
+    $("#dialogMyFleet input[name='m']").val( spy['m'] ); if (spy['m'] == 0) $("#dialogMyFleet input[name='m']").val("");
+    $("#dialogMyFleet input[name='k']").val( spy['k'] ); if (spy['k'] == 0) $("#dialogMyFleet input[name='k']").val("");
+    $("#dialogMyFleet input[name='d']").val( spy['d'] ); if (spy['d'] == 0) $("#dialogMyFleet input[name='d']").val("");
+    $("#dialogMyFleet input[name='t109']").val( spy['o109']); if (spy['o109'] == 0) $("#dialogMyFleet input[name='t109']").val("");
+    $("#dialogMyFleet input[name='t110']").val( spy['o110']); if (spy['o110'] == 0) $("#dialogMyFleet input[name='t110']").val("");
+    $("#dialogMyFleet input[name='t111']").val( spy['o111']); if (spy['o111'] == 0) $("#dialogMyFleet input[name='t111']").val("");
+    $("#dialogMyFleet input[name='t115']").val( spy['o115']); if (spy['o115'] == 0) $("#dialogMyFleet input[name='t115']").val("");
+    $("#dialogMyFleet input[name='t117']").val( spy['o117']); if (spy['o117'] == 0) $("#dialogMyFleet input[name='t117']").val("");
+    $("#dialogMyFleet input[name='t118']").val( spy['o118']); if (spy['o118'] == 0) $("#dialogMyFleet input[name='t118']").val("");
+
+    $('#dialogMyFleet #tabs').tabs('select', 0);
+}
+
+// Разобрать доклад, переданный через адресную строку.
+function SpyQueryString ()
+{
+    s = getParam ("spytext");
+    if (s != "") {
+        s = _utf8_decode (unescape(s.replace(/\+/g,  " ")));
+        spy = SpyReport (s);
+
+        for (n=0; n<8; n++) addslot["d"+n] = spy['o'+(401+n)];
+        addslot["m"] = spy['m']; addslot["k"] = spy['k']; addslot["d"] = spy['d'];
+        for (n=0; n<14; n++) addslot["f"+n] = spy['o'+(202+n)];
+        addslot["weap"] = spy['o109']; addslot["shld"] = spy['o110']; addslot["hull"] = spy['o111'];
+        addslot["prop"] = spy['o115']; addslot["imp"] = spy['o117']; addslot["hyper"] = spy['o118'];
+        addslot["g"] = spy['g']; addslot["s"] = spy['s']; addslot["p"] = spy['p'];
+        addslot["name"] = spy['player'];
+//        debugShowAddslot ();
+
+        AddSlot (0);
+        UpdateDefendersList ();
+        return 1;
+    }
+    else return 0;s
+}
+
+// <! ----------------- Расчёт времени полёта и затрат дейтерия. ------------------------ !>
+
+function timfmt (n) { return (n < 10) ? "0"+n : n; }
+
+// Преобразовать количество секунд в строку вида h:mm:ss
+function TimeFormat (seconds)
+{
+    hours = Math.floor(seconds / 3600);
+    mins = Math.floor(seconds  / 60 % 60);
+    secs = Math.floor(seconds / 1 % 60);
+    return timfmt(hours) + ":" + timfmt(mins) + ":" + timfmt(secs);
+}
+
+// Вычислить полную грузоподъёмность флота.
+function CalcCargo (attacker, slotnum)
+{
+    var cargo = 0;
+    var pre, tab;
+    if (attacker) { pre = "a" + slotnum + "_"; tab = aslots; }    // Настроить индексацию.
+    else { pre = "d" + slotnum + "_"; tab = dslots; }
+    for (n=0; n<14; n++) cargo += tab[pre+"f"+n] * fleetParam[n][3];
+    return cargo;
+}
+
+// Базовое потребление дейтерия.
+function BaseDeutCons (id, impDrive)
+{
+    if (id == 202 && impDrive >= 5) return fleetParam[id-202][5] + 10;
+    else return fleetParam[id-202][5];
+}
+
+// Увеличить базовую скорость корабля в соотвтествии с уровнем двигателя.
+// 202-Р/И, 203-Р, 204-Р, 205-И, 206-И, 207-Г, 208-И, 209-Р, 210-Р, 211-И/Г, 212-Р, 213-Г, 214-Г, 215-Г
+function AccelerateFleet (id, baseSpeed, combDrive, impDrive, hyperDrive)
+{
+    switch (id) {
+        case 202:
+            if (impDrive >= 5) return (baseSpeed + 5000) * (1 + 0.2 * impDrive);
+            else return baseSpeed * (1 + 0.1 * combDrive);
+        case 211:
+            if (hyperDrive >= 8) return (baseSpeed + 1000) * (1 + 0.3 * hyperDrive);
+            else return baseSpeed * (1 + 0.2 * impDrive);            
+        case 203:
+        case 204:
+        case 209:
+        case 210:
+        case 212:
+            return baseSpeed * (1 + 0.1 * combDrive);
+        case 205:
+        case 206:
+        case 208:
+            return baseSpeed * (1 + 0.2 * impDrive);
+        case 207:
+        case 213:
+        case 214:
+        case 215:
+            return baseSpeed * (1 + 0.3 * hyperDrive);
+        default: return baseSpeed;
+    }
+}
+
+// Получить скорость самого медленного корабля в слоте.
+function SlowestSpeed (attacker, slotnum)
+{
+    var minspeed = Infinity;
+    var pre, tab;
+    if (attacker) { pre = "a" + slotnum + "_"; tab = aslots; }    // Настроить индексацию.
+    else { pre = "d" + slotnum + "_"; tab = dslots; }
+
+    for (n=0; n<14; n++) {
+        if (tab[pre + "f" + n] && fleetParam[n][4]) {
+            var speed = AccelerateFleet ( 202+n, fleetParam[n][4], parseInt(tab[pre + "prop"]), parseInt(tab[pre + "imp"]), parseInt(tab[pre + "hyper"]) );
+            if (speed < minspeed) minspeed = speed;
+        }
+    }
+    return minspeed;
+}
+
+// Удалённость.
+function FlightDistance (attacker, slotnum)
+{
+    var dist;
+    var pre, tab;
+    if (attacker) { pre = "a" + slotnum + "_"; tab = aslots; }    // Настроить индексацию.
+    else { pre = "d" + slotnum + "_"; tab = dslots; }
+    if (dnum == 0) return 0;
+    var g0 = tab[pre+"g"], s0 = tab[pre+"s"], p0 = tab[pre+"p"];
+    var g1 = dslots["d0_g"], s1 = dslots["d0_s"], p1 = dslots["d0_p"];
+    if (g0 == g1) {
+        if (s0 == s1) {
+            if (p1 == p0) dist = 5;
+            else dist = Math.abs (p1 - p0) * 5 + 1000;
+        }
+        else dist = Math.abs (s1 - s0) * 5 * 19 + 2700;
+    }
+    else dist = Math.abs (g1 - g0) * 20000;
+    return dist;
+}
+
+// Время полёта в секундах, при заданном проценте.
+function FlightTime (attacker, slotnum, prc)
+{
+    var pre, tab;
+    if (attacker) { pre = "a" + slotnum + "_"; tab = aslots; }    // Настроить индексацию.
+    else { pre = "d" + slotnum + "_"; tab = dslots; }
+    if (dnum == 0) return "0";    // Нет обороняющегося #0.
+    var dist = FlightDistance (attacker, slotnum);
+    flytime = Math.round ( (35000 / (prc/10) * Math.sqrt (dist * 10 / SlowestSpeed (attacker, slotnum)) + 10) / SimConfig["xspeed"] );
+    return flytime;
+}
+
+// Потребление дейтерия.
+function DeuteriumCons (attacker, slotnum, prc, probeOnly)
+{
+    var pre, tab;
+    if (attacker) { pre = "a" + slotnum + "_"; tab = aslots; }    // Настроить индексацию.
+    else { pre = "d" + slotnum + "_"; tab = dslots; }
+    if (dnum == 0) return "0";    // Нет обороняющегося #0.
+
+    var cons = 0, dist = FlightDistance(attacker, slotnum);
+    for (i=0; i<14; i++) {
+        if (probeOnly && i != 8) continue;
+        var ships = tab[pre + "f" + i];
+        if (ships) {
+            var shipspeed = AccelerateFleet ( 202+i, fleetParam[i][4], parseInt(tab[pre + "prop"]), parseInt(tab[pre + "imp"]), parseInt(tab[pre + "hyper"]) );
+            var spd = 35000 / (FlightTime (attacker, slotnum, prc) * SimConfig["xspeed"] - 10) * Math.sqrt(dist * 10 / shipspeed);
+            var basecons = ships * BaseDeutCons(202+i, parseInt(tab[pre + "imp"]));
+            cons += basecons * dist / 35000 * ((spd / 10) + 1) * ((spd / 10) + 1);
+        }
+    }
+    cons = Math.round(cons) + 1;
+    return cons;
+}
+
+function TimesDialog (attacker, slotnum)
+{
+    var pre, tab;
+    if (attacker) { pre = "a" + slotnum + "_"; tab = aslots; }    // Настроить индексацию.
+    else { pre = "d" + slotnum + "_"; tab = dslots; }
+    var title = tab[pre+"name"] + " [" + tab[pre+"g"] + ":" + tab[pre+"s"] + ":" + tab[pre+"p"] + "] => " + 
+                   dslots["d0_name"] + " [" + dslots["d0_g"] + ":" + dslots["d0_s"] + ":" + dslots["d0_p"] + "]";
+    $('#dialogTimes').dialog('open');
+    if (dnum) $('#dialogTimes').dialog('option', 'title', title);
+    else $('#dialogTimes').dialog('option', 'title', loca["LOCA_TIMES_TITLE"]);
+    $("#dialogTimes th[name='xspeed']").text( SimConfig["xspeed"] + "x" );
+
+    for (prc=100; prc>=10; prc-=10) {
+        ftime = FlightTime (attacker, slotnum, prc);
+        if (ftime == 0) $("#dialogTimes td[name='f_time"+prc+"']").text( "-" );
+        else $("#dialogTimes td[name='f_time"+prc+"']").text( TimeFormat (ftime) );
+        cons = DeuteriumCons (attacker, slotnum, prc, 0);
+        probeCons = DeuteriumCons (attacker, slotnum, prc, 1);
+        if (cons == 0) $("#dialogTimes td[name='f_cons"+prc+"']").text( "-" );
+        else $("#dialogTimes td[name='f_cons"+prc+"']").text( nicenum (cons) );
+        probeCargo = fleetParam[8][3] * tab[pre+"f8"] - probeCons;
+        probeCargo = (probeCargo > 0) ? probeCargo : 0;
+        cargo = CalcCargo (attacker, slotnum) - cons - probeCargo;
+        if (cargo >= 0) fontcolor = "lime";
+        else fontcolor = "red";
+        $("#dialogTimes td[name='f_cargo"+prc+"']").html( "<font color='"+fontcolor+"'>" + nicenum (cargo) + "</font>" );
+    }
+}
+
+// <! ----------------- Настройки симулятора. ------------------------ !>
+
+function LoadSimConfig ()
+{
+    cookie = readCookie ("simconfig");
+    if (cookie == null) { // Сбросить настройки по умолчанию.
+        SimConfig['gui_lang'] = SimConfig['sim_lang'] = "ru";
+        SimConfig['format'] = "red";
+        SimConfig['simnum'] = 10;
+        SimConfig['simcase'] = 1;
+        SimConfig['rapid'] = 1;
+        SimConfig['did'] = 0;
+        SimConfig['fid'] = 30;
+        SimConfig['xspeed'] = 1;
+        SimConfig['kernel'] = "http://ogamespec.com/cgi-bin/specsim";
+        SaveSimConfig ();
+    }
+    else {
+        var temp = cookie.split ("|");
+        SimConfig['gui_lang'] = temp[0]; SimConfig['sim_lang'] = temp[1]; SimConfig['format'] = temp[2];
+        SimConfig['simnum'] = temp[3]; SimConfig['simcase'] = temp[4];
+        SimConfig['rapid'] = temp[5]; SimConfig['did'] = temp[6]; SimConfig['fid'] = temp[7];
+        SimConfig['xspeed'] = temp[8];
+        SimConfig['kernel'] = temp[9];
+
+        SimConfig['simnum'] = 1;    // Сделать количество симуляций = 1. Сервак не справляется с множественными симуляциями.
+    }
+}
+
+function SaveSimConfig ()
+{
+    cookie = SimConfig['gui_lang'] + "|" + SimConfig['sim_lang'] + "|" + SimConfig['format'] + "|" + SimConfig['simnum'] + "|" + SimConfig['simcase'] + "|" +
+                SimConfig['rapid'] + "|" + SimConfig['did'] + "|" + SimConfig['fid'] + "|" + SimConfig['xspeed'] + "|" + SimConfig['kernel'];
+    createCookie ("simconfig", cookie, 9999);
+    createCookie ("comtheme", comtheme, 9999);
+}
+
+function SettingsDialog ()
+{
+    LoadSimConfig ();
+    $("#dialogSettings select[name='format']").val ( SimConfig['format'] );
+    $("#dialogSettings select[name='gui_lang']").val ( SimConfig['gui_lang'] );
+    $("#dialogSettings select[name='sim_lang']").val ( SimConfig['sim_lang'] );
+    $("#dialogSettings select[name='sim_theme']").val ( comtheme );
+
+/*
+    $("#dialogSettings select[name='simcase']").val ( SimConfig['simcase'] );
+    $("#dialogSettings input[name='simnum']").val ( SimConfig['simnum'] );
+*/
+    $("#dialogSettings select[name='simcase']").hide ();    // Сделать количество симуляций = 1.
+    $("#dialogSettings input[name='simnum']").val ( 1 );
+    $("#dialogSettings #sop6").hide ();
+
+    $("#dialogSettings select[name='fid']").val ( SimConfig['fid'] );
+    $("#dialogSettings select[name='did']").val ( SimConfig['did'] );
+    $("#dialogSettings select[name='xspeed']").val ( SimConfig['xspeed'] );
+    $("#dialogSettings select[name='rapid']").val ( SimConfig['rapid'] );
+    $("#dialogSettings input[name='kernel']").val ( SimConfig['kernel'] );
+    $("#dialogSettings").dialog('open');
+}
+
+function SetDefaultKernel ()
+{
+    $("#dialogSettings input[name='kernel']").val ( "http://ogamespec.com/cgi-bin/specsim" );
+}
+
+// <! ----------------- Постоянная ссылка. ------------------------ !>
+
+function ParsePermalink (url)
+{
+    var an = getParam ("anum");
+    for (i=0; i<an; i++)
+    {
+        pre = "a" + i + "_";
+        for (n=0; n<14; n++) addslot["f"+n] = getParam (pre+"f"+n);
+        addslot["weap"] = getParam (pre+"weap"); addslot["shld"] = getParam (pre+"shld"); addslot["hull"] = getParam (pre+"hull");
+        addslot["prop"] = getParam (pre+"prop"); addslot["imp"] = getParam (pre+"imp"); addslot["hyper"] = getParam (pre+"hyper");
+        addslot["g"] = getParam (pre+"g"); addslot["s"] = getParam (pre+"s"); addslot["p"] = getParam (pre+"p");
+        addslot["name"] = getParam (pre+"name");
+        addslot["name"] = decodeURIComponent(addslot["name"].replace(/\+/g,  " "));
+        AddSlot (1);
+    }
+
+    var dn = getParam ("dnum");
+    for (i=0; i<dn; i++)
+    {
+        pre = "d" + i + "_";
+        if ( i == 0) {
+            for (n=0; n<8; n++) addslot["d"+n] = getParam ("d_d"+n);
+            addslot["m"] = getParam ("m"); addslot["k"] = getParam ("k"); addslot["d"] = getParam ("d");
+        }
+        for (n=0; n<14; n++) addslot["f"+n] = getParam (pre+"f"+n);
+        addslot["weap"] = getParam (pre+"weap"); addslot["shld"] = getParam (pre+"shld"); addslot["hull"] = getParam (pre+"hull");
+        addslot["prop"] = getParam (pre+"prop"); addslot["imp"] = getParam (pre+"imp"); addslot["hyper"] = getParam (pre+"hyper");
+        addslot["g"] = getParam (pre+"g"); addslot["s"] = getParam (pre+"s"); addslot["p"] = getParam (pre+"p");
+        addslot["name"] = getParam (pre+"name");
+        addslot["name"] = decodeURIComponent(addslot["name"].replace(/\+/g,  " "));
+        AddSlot (0);
+    }
+
+    UpdateAttackersList ();
+    UpdateDefendersList ();
+}
+
+function UpdatePermalink ()
+{
+    target_url = document.location.pathname + "?" + GenerateSimParams ()
+    $("a#permalink").attr("href", target_url);
+}
+
+// <! ----------------- Инициализация. ------------------------ !>
+
+function InitSpecSim ()
+{
+    // Всплывающие подсказки для тех, кто ещё не привык к редизайну :)
+    for (n=0; n<14; n++) $(".ship"+(202+n)).wTooltip({content: TechNames[202+n] });
+    for (n=0; n<8; n++) $(".def"+(401+n)).wTooltip({content: TechNames[401+n] });
+    $(".tech109").wTooltip({content: TechNames[109] });
+    $(".tech110").wTooltip({content: TechNames[110] });
+    $(".tech111").wTooltip({content: TechNames[111] });
+    $(".tech115").wTooltip({content: TechNames[115] });
+    $(".tech117").wTooltip({content: TechNames[117] });
+    $(".tech118").wTooltip({content: TechNames[118] });
+    $(".defaultButton").wTooltip({content: loca["LOCA_BUTTON_DEFAULT"] });
+
+    // Разобрать и обновить постоянную ссылку. Перед этим попытаться разобрать шпионский доклад.
+    if (SpyQueryString () == 0) ParsePermalink (document.location.href);
+
+    // Строки локализации.
+    $("div#dialogMyFleet a#af0").text(loca["LOCA_ADDFLEET_FLEET"]);
+    $("div#dialogMyFleet a#af1").text(loca["LOCA_ADDFLEET_DEFENSE"]);
+    $("div#dialogMyFleet a#af2").text(loca["LOCA_ADDFLEET_RESEARCH"]);
+    $("div#dialogMyFleet a#af3").text(loca["LOCA_ADDFLEET_REPORT"]);
+    $("div#dialogMyFleet small#af4").text(loca["LOCA_ADDFLEET_WARSHIPS"]);
+    $("div#dialogMyFleet small#af5").text(loca["LOCA_ADDFLEET_CIVILSHIPS"]);
+    $("div#dialogMyFleet small#af6").text(loca["LOCA_ADDFLEET_DEFENSE"]);
+    $("div#dialogMyFleet small#af7").text(loca["LOCA_ADDFLEET_RESEARCH"]);
+    $("div#dialogMyFleet td#af8").text(loca["LOCA_ADDFLEET_SPYHEADER"]);
+    $("div#dialogMyFleet span#af9").text(loca["LOCA_ADDFLEET_SPYBUTTON"]);
+    $("div#dialogMyFleet td#af10").text(loca["LOCA_ADDFLEET_PLAYERNAME"]);
+    $("div#dialogMyFleet td#af11").text(loca["LOCA_ADDFLEET_COORDS"]);
+    $("div#dialogMyFleet td#af12").text(loca["LOCA_ADDFLEET_PLUNDER"]);
+    $("div#dialogMyFleet span#af13").text(loca["LOCA_SPY_M"]);
+    $("div#dialogMyFleet span#af14").text(loca["LOCA_SPY_K"]);
+    $("div#dialogMyFleet span#af15").text(loca["LOCA_SPY_D"]);
+
+    $("div#MaxFleets").attr("title", loca["LOCA_MAXFLEET_TITLE"]);
+    $("div#MaxFleets font#caption").text(loca["LOCA_MAXFLEET_CAPTION"]);
+    $("div#MaxFleets p#text").text(loca["LOCA_MAXFLEET_TEXT"]);
+
+    $("div#dialogTimes").attr("title", loca["LOCA_TIMES_TITLE"]);
+    $("div#dialogTimes th#times1").text(loca["LOCA_TIMES_DURATION"]);
+    $("div#dialogTimes th#times2").text(loca["LOCA_TIMES_CONSUMPTION"]);
+    $("div#dialogTimes th#times3").text(loca["LOCA_TIMES_CARGO"]);
+
+    $("div#dialogSettings").attr("title", loca["LOCA_OPT_0"]);
+    $("div#dialogSettings th#sop1").text(loca["LOCA_OPT_1"]);
+    $("div#dialogSettings td#sop2").text(loca["LOCA_OPT_2"]);
+    $("div#dialogSettings option#sop2_1").text(loca["LOCA_OPT_2_1"]);
+    $("div#dialogSettings option#sop2_2").text(loca["LOCA_OPT_2_2"]);
+    $("div#dialogSettings option#sop2_3").text(loca["LOCA_OPT_2_3"]);
+    $("div#dialogSettings option#sop2_4").text(loca["LOCA_OPT_2_4"]);
+    $("div#dialogSettings option#sop2_5").text(loca["LOCA_OPT_2_5"]);
+    $("div#dialogSettings td#sop3").text(loca["LOCA_OPT_3"]);
+    $("div#dialogSettings td#sop4").text(loca["LOCA_OPT_4"]);
+    $("div#dialogSettings td#sop4_2").text(loca["LOCA_OPT_4_2"]);
+    $("div#dialogSettings th#sop5").text(loca["LOCA_OPT_5"]);
+    $("div#dialogSettings td#sop6").text(loca["LOCA_OPT_6"]);
+    $("div#dialogSettings option#sop6_1").text(loca["LOCA_OPT_6_1"]);
+    $("div#dialogSettings option#sop6_2").text(loca["LOCA_OPT_6_2"]);
+    $("div#dialogSettings option#sop6_3").text(loca["LOCA_OPT_6_3"]);
+    $("div#dialogSettings option#sop6_4").text(loca["LOCA_OPT_6_4"]);
+    $("div#dialogSettings option#sop6_5").text(loca["LOCA_OPT_6_5"]);
+    $("div#dialogSettings td#sop7").text(loca["LOCA_OPT_7"]);
+    $("div#dialogSettings td#sop8").text(loca["LOCA_OPT_8"]);
+    $("div#dialogSettings td#sop9").text(loca["LOCA_OPT_9"]);
+    $("div#dialogSettings td#sop10").text(loca["LOCA_OPT_10"]);
+    $("div#dialogSettings td#sop11").text(loca["LOCA_OPT_11"]);
+    $("div#dialogSettings td#sop12").text(loca["LOCA_OPT_12"]);
+    $("div#dialogSettings option#sopOff1").text(loca["LOCA_OPT_OFF"]);
+    $("div#dialogSettings option#sopOff2").text(loca["LOCA_OPT_OFF"]);
+    $("div#dialogSettings option#sopOff3").text(loca["LOCA_OPT_OFF"]);
+    $("div#dialogSettings option#sopOn1").text(loca["LOCA_OPT_ON"]);
+
+    document.title = loca["LOCA_HEAD_TITLE"];
+
+    $("#dialogMyFleet #tabs").tabs();
+
+    InitControls ();
+}
+
+</script>
+
+<! ----------------- Тело страницы ------------------------ !>
+
+<div id="simcontent" class="ui-widget-content ui-corner-all"> 
+<div id="a_accordion">
+<h3><a href="#"><script>document.write(loca["LOCA_MAIN_ATTACKERS"]);</script></a></h3>
+<div><div id="alist"></div>
+<a href="#" id="a_addfleet" class="fg-button fg-button-icon-left ui-state-default ui-corner-all"><span class="ui-icon ui-icon-circle-plus"></span><script>document.write(loca["LOCA_MAIN_ADDSLOT"]);</script></a>
+</div></div>
+<div id="d_accordion">
+<h3><a href="#"><script>document.write(loca["LOCA_MAIN_DEFENDERS"]);</script></a></h3>
+<div><div id="dlist"></div>
+<a href="#" id="d_addfleet" class="fg-button fg-button-icon-left ui-state-default ui-corner-all"><span class="ui-icon ui-icon-circle-plus"></span><script>document.write(loca["LOCA_MAIN_ADDSLOT"]);</script></a>
+</div></div>
+<p>
+  <table width="99%"><tr><td align="left">
+  <button id="simulate" class="fg-button ui-state-default ui-corner-all" type="button"><script>document.write(loca["LOCA_MAIN_SIMULATE"]);</script></button>
+  <button id="settings" class="fg-button ui-state-default ui-corner-all" type="button"><script>document.write(loca["LOCA_MAIN_SETTINGS"]);</script></button>
+   </td><td align="right">
+    <a id="permalink" href="#"><script>document.write(loca["LOCA_MAIN_PERMALINK"]);</script></a>
+   </td></tr></table>
+</p>
+<div id="debug"></div>
+</div>
+
+    <!-- Диалог редактирования флота -->   
+    <div id="dialogMyFleet" title="dialogMyFleet" style="display: none;"> 
+    <center>
+<div id="tabs"> 
+    <ul>   
+    <li><a href="#tabs-1" id="af0">Флот</a></li>
+    <li><a href="#tabs-2" id="af1">Оборона</a></li>
+    <li><a href="#tabs-3" id="af2">Технологии</a></li>
+    <li><a href="#tabs-4" id="af3">Из доклада</a></li>
+</ul>   
+<div id="tabs-1">   
+    <table><tr><td colspan=4><h3 class="ui-widget-header ui-corner-all"><small id="af4">Боевые корабли</small></h3></td><td>&nbsp;</td>   
+    <td colspan=3><h3 class="ui-widget-header ui-corner-all"><small id="af5">Гражданские корабли</small></h3></tr>   
+    <tr>     <td><div class="fleetimg ship204"><input type="text" name="f204"></div></td>   
+    <td><div class="fleetimg ship205"><input type="text" name="f205"></div></td>
+    <td><div class="fleetimg ship206"><input type="text" name="f206"></div></td> 
+    <td><div class="fleetimg ship207"><input type="text" name="f207"></div></td>   
+    <td>&nbsp;</td>   
+    <td><div class="fleetimg ship202"><input type="text" name="f202"></div></td>   
+    <td><div class="fleetimg ship203"><input type="text" name="f203"></div></td>   
+    <td><div class="fleetimg ship208"><input type="text" name="f208"></div></td>    </tr>
+    <tr>    <td><div class="fleetimg ship215"><input type="text" name="f215"></div></td>
+    <td><div class="fleetimg ship211"><input type="text" name="f211"></div></td>
+    <td><div class="fleetimg ship213"><input type="text" name="f213"></div></td>
+    <td><div class="fleetimg ship214"><input type="text" name="f214"></div></td>
+    <td>&nbsp;</td>
+    <td><div class="fleetimg ship209"><input type="text" name="f209"></div></td>
+    <td><div class="fleetimg ship210"><input type="text" name="f210"></div></td>
+    <td><div class="fleetimg ship212"><input type="text" name="f212"></div></td>    </tr>
+    </table>
+</div>   
+<div id="tabs-2">
+    <table>
+    <tr><td colspan=8><h3 class="ui-widget-header ui-corner-all"><small id="af6">Оборона</small></h3></td></tr>
+    <tr>   <td><div class="defimg def401"><input type="text" name="d401"></div></td> 
+    <td><div class="defimg def402"><input type="text" name="d402"></div></td>
+    <td><div class="defimg def403"><input type="text" name="d403"></div></td> 
+    <td><div class="defimg def404"><input type="text" name="d404"></div></td>     <td>&nbsp;</td>
+    <td><div class="defimg def405"><input type="text" name="d405"></div></td> 
+    <td><div class="defimg def406"><input type="text" name="d406"></div></td></tr>
+    <tr> <td><div class="defimg def407"><input type="text" name="d407"></div></td>
+    <td><div class="defimg def408"><input type="text" name="d408"></div></td> </tr>
+    </table>
+</div>
+<div id="tabs-3">   
+    <table>
+    <tr><td colspan=8><h3 class="ui-widget-header ui-corner-all"><small id="af7">Технологии</small></h3></td></tr>   
+    <tr>  <td><div class="techimg tech115"><input type="text" name="t115"></div></td>
+    <td><div class="techimg tech117"><input type="text" name="t117"></div></td>
+    <td><div class="techimg tech118"><input type="text" name="t118"></div></td>   </tr>
+    <tr> <td><div class="techimg tech109"><input type="text" name="t109"></div></td> 
+    <td><div class="techimg tech110"><input type="text" name="t110"></div></td>
+    <td><div class="techimg tech111"><input type="text" name="t111"></div></td> </tr>
+    </table>
+</div>   
+<div id="tabs-4">   
+    <table class="ui-widget ui-widget-content">
+    <tr><td id="af8">Текст шпионского доклада:</td></tr>
+    <tr><td colspan=2><textarea id="spy" rows="9" cols="82"></textarea></td></tr>  
+    <tr><td><a href="#" id="spyreport" class="fg-button fg-button-icon-left ui-state-default ui-corner-all"><span class="ui-icon ui-icon-circle-plus"></span><span id="af9">Вставить из доклада</span></a></td></tr>
+    </table>
+</div>   
+</div>
+    </center>
+    <table>
+    <tr><td> &nbsp; </td></tr>
+    <tr><td id="af10">Имя игрока</td><td><input type="text" name="name" size=10> </td>
+          <td id="af11">Координаты</td><td><input type="text" name="g" size=3>:<input type="text" name="s" size=3>:<input type="text" name="p" size=3></td></tr>   
+    <tr><td> &nbsp; </td></tr>
+    <tr id="plunder"><td id="af12">Добыча</td><td><input type="text" name="m" size=9> <span  id="af13">металла</span> <td><input type="text" name="k" size=9> <span id="af14">кристалла</span> </td> <td><input type="text" name="d" size=9> <span id="af15">дейтерия</span>.</td></tr>
+    </table>
+    </div>  
+
+    <!-- Диалог с ошибкой о переполнении слотов. -->
+    <div id="MaxFleets" title="Ошибка" style="display: none;">
+	    <p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 50px 0;"></span>
+         <b><font color=red id="caption"> </font></b> <p id="text">
+                </p></p>
+    </div>
+
+    <!-- Диалог расчета времени полёта и затрат дейтерия -->
+    <div id="dialogTimes" title="Время полёта и затраты дейтерия" style="display: none;">
+    <center><table class="ui-widget-content ui-corner-all" width=500px><tbody align=center>
+    <tr><th name="xspeed"></th><th id="times1">Время полёта</th><th id="times2">Затраты дейтерия</th><th id="times3">Грузоподъёмность</th></tr>
+    <tr><td>100%</td><td name="f_time100">-</td><td name="f_cons100">-</td><td name="f_cargo100">-</td></tr>
+    <tr><td>90%</td><td name="f_time90">-</td><td name="f_cons90">-</td><td name="f_cargo90">-</td></tr>
+    <tr><td>80%</td><td name="f_time80">-</td><td name="f_cons80">-</td><td name="f_cargo80">-</td></tr>
+    <tr><td>70%</td><td name="f_time70">-</td><td name="f_cons70">-</td><td name="f_cargo70">-</td></tr>
+    <tr><td>60%</td><td name="f_time60">-</td><td name="f_cons60">-</td><td name="f_cargo60">-</td></tr>
+    <tr><td>50%</td><td name="f_time50">-</td><td name="f_cons50">-</td><td name="f_cargo50">-</td></tr>
+    <tr><td>40%</td><td name="f_time40">-</td><td name="f_cons40">-</td><td name="f_cargo40">-</td></tr>
+    <tr><td>30%</td><td name="f_time30">-</td><td name="f_cons30">-</td><td name="f_cargo30">-</td></tr>
+    <tr><td>20%</td><td name="f_time20">-</td><td name="f_cons20">-</td><td name="f_cargo20">-</td></tr>
+    <tr><td>10%</td><td name="f_time10">-</td><td name="f_cons10">-</td><td name="f_cargo10">-</td></tr>
+    </tbody></table></center>
+    </div>
+
+    <!-- Диалог Настройки. -->
+    <div id="dialogSettings" title="Настройки SpecSim" style="display: none;">
+        <center><table class="ui-widget-content ui-corner-all"><tr><td>
+            <table class="ui-widget-content ui-corner-all">
+            <th colspan=2 id="sop1" align="left">Настройки Отображения</th>
+            <tr><td id="sop2" align="left">Формат доклада</td><td><select name="format">
+                <option value="short" id="sop2_1">Краткий доклад</option>
+                <option value="084" id="sop2_2">OGame 0.84</option>
+                <option value="red" id="sop2_3">OGame Redesign 1.0+</option>
+                <option value="xml" id="sop2_4">XML</option>
+                <option value="debug" id="sop2_5">Отладочная информация</option>
+            </select></td></tr>
+            <tr><td id="sop3" align="left">Язык интерфейса</td><td align="left"><select name="gui_lang">
+                <option value="en">English</option>
+                <option value="ru">Русский</option>
+            </select></td></tr>
+            <tr><td id="sop4" align="left">Язык докладов</td><td align="left"><select name="sim_lang">
+                <option value="en">English</option>
+                <option value="ru">Русский</option>
+            </select></td></tr>
+            <tr><td id="sop4_2" align="left">Стиль оформления</td><td align="left"><select name="sim_theme">
+                <option value="base">base</option>
+                <option value="trontastic">trontastic</option>
+                <option value="le-frog">le-frog</option>
+            </select></td></tr>
+            </table>
+        </td><td>
+            <table class="ui-widget-content ui-corner-all">
+            <th colspan=2 id="sop5" align="left">Настройки Симуляции</th>
+            <tr><td id="sop6" align="left">Исход боя</td><td align="left"><select name="simcase">
+                <option value="0" id="sop6_1">Усреднённые результаты</option>
+                <option value="1" id="sop6_2">Лучший для атакующего</option>
+                <option value="2" id="sop6_3">Лучший для обороняющегося</option>
+                <option value="3" id="sop6_4">Худший для атакующего</option>
+                <option value="4" id="sop6_5">Худший для обороняющегося</option>
+            </select></td></tr>
+            <tr><td id="sop7" align="left">Количество симуляций</td><td align="left"><input type="text" name="simnum" size=3/></td></tr>
+            <tr><td id="sop8" align="left">Флот в Обломки</td><td align="left"><select name="fid">
+                <option value="0" id="sopOff1">Откл.</option><option value="10">10%</option><option value="20">20%</option><option value="30">30%</option>
+                <option value="40">40%</option><option value="40">40%</option><option value="50">50%</option><option value="60">60%</option>
+                <option value="70">70%</option><option value="80">80%</option><option value="90">90%</option><option value="100">100%</option>
+            </select></td></tr>
+            <tr><td id="sop9" align="left">Оборона в Обломки</td><td align="left"><select name="did">
+                <option value="0" id="sopOff2">Откл.</option><option value="10">10%</option><option value="20">20%</option><option value="30">30%</option>
+                <option value="40">40%</option><option value="40">40%</option><option value="50">50%</option><option value="60">60%</option>
+                <option value="70">70%</option><option value="80">80%</option><option value="90">90%</option><option value="100">100%</option>
+            </select></td></tr>
+            <tr><td id="sop10" align="left">Скорострел</td><td align="left"><select name="rapid">
+                <option value="0" id="sopOff3">Откл.</option><option value="1" id="sopOn1">Вкл.</option>
+            </select></td></tr>
+            <tr><td id="sop11" align="left">Ускорение Вселенной</td><td align="left"><select name="xspeed">
+                <option value="1">1x</option><option value="2">2x</option><option value="3">3x</option><option value="4">4x</option>
+                <option value="5">5x</option><option value="6">6x</option><option value="7">7x</option><option value="8">8x</option>
+            </select></td></tr>
+            </table>
+        </td></tr>
+         <tr><td colspan=2> <table class="ui-widget-content ui-corner-all"><tr><td id="sop12">Ядро симулятора</td><td>
+           <input type="text" name="kernel" size=70%/></td><td><a id="defaultKernel" class="ui-icon ui-icon-refresh defaultButton" href="#"/></td></tr></table>  </td></tr>
+        </table></center>
+    </div>
+
+</body>
+</html>

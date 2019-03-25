@@ -1,0 +1,32 @@
+<html>
+
+<head>
+</head>
+
+<body>
+
+<script language="JavaScript">
+
+function getParam(sParamName){
+    var Params = location.search.substring(1).split("&");
+    var variable = "";
+    for (var i = 0; i < Params.length; i++){
+        if (Params[i].split("=")[0] == sParamName){
+            if (Params[i].split("=").length > 1) variable = Params[i].split("=")[1];
+            return variable;
+        }
+    }
+    return "";
+}
+
+
+alert (getParam("lang"));
+
+</script>
+
+
+ccc
+
+</body>
+
+</html>

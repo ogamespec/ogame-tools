@@ -1,0 +1,1 @@
+void DebugReport (BattleState *bst, Slot *a, int anum, Slot *d, int dnum);

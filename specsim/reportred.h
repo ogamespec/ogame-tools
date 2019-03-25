@@ -1,0 +1,1 @@
+void OGameRedReport (BattleState *bst, Slot *a, int anum, Slot *d, int dnum);

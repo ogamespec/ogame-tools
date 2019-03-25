@@ -1,0 +1,21 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Программа для перевода значения UNIX date в человеческий формат</title>
+
+<script type="text/javascript">
+function calc ()
+{
+    t = parseInt (document.getElementById ("number").value);
+    d = new Date (t * 1000);
+    out = document.getElementById ("unixtime");
+    out.innerHTML = "Время UTC: " + d.toUTCString ();
+}
+</script>
+
+</head>
+<body>
+    Количество секунд с 01.01.1970 <input id="number" type="text" /> <input type="button" onclick="calc();" value="Посчитать" /><br/>
+    <div id="unixtime"></div>
+</body>
+</html>

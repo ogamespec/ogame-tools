@@ -1,0 +1,263 @@
+<html>
+<head>
+<LINK rel="stylesheet" type="text/css" href="formate.css">
+<meta http-equiv='content-type' content='text/html; charset=utf-8' />
+<TITLE>Захват добычи</TITLE>
+
+<script type='text/javascript'>
+
+// Алгоритм захвата добычи на JavaScript, версия 0.4
+// (c) Andorianin 2009, альянс СПЕЦНАЗ.
+
+// Грузоподъмность каждого типа кораблей.
+var cargoTab = new Array ( 5000, 25000, 50, 100, 800, 1500, 7500, 20000, 0, 500, 0, 2000, 1000000, 750 );
+
+// Привык использовать эти функции в PHP...
+
+function php_number_format( number, decimals, dec_point, thousands_sep ) {
+    // http://kevin.vanzonneveld.net
+    var n = number, c = isNaN(decimals = Math.abs(decimals)) ? 2 : decimals;
+    var d = dec_point == undefined ? ',' : dec_point;
+    var t = thousands_sep == undefined ? '.' : thousands_sep, s = n < 0 ? '-' : '';
+    var i = parseInt(n = Math.abs(+n || 0).toFixed(c)) + '', j = (j = i.length) > 3 ? j % 3 : 0;
+    return s + (j ? i.substr(0, j) + t : '') + i.substr(j).replace(/(\d{3})(?=\d)/g, '$1' + t) + (c ? d + Math.abs(n - i).toFixed(c).slice(2) : '');
+}
+
+function php_str_replace(search, replace, subject) {
+    // http://kevin.vanzonneveld.net
+    var s = subject;
+    var ra = r instanceof Array, sa = s instanceof Array;
+    var f = [].concat(search);
+    var r = [].concat(replace);
+    var i = (s = [].concat(s)).length;
+    var j = 0;
+    while (j = 0, i--) {
+        if (s[i]) {
+            while (s[i] = (s[i]+'').split(f[j]).join(ra ? r[j] || '' : r[0]), ++j in f){};
+        }
+    }
+    return sa ? s : s[0];
+}
+
+function nicenum (n)
+{
+    return php_number_format (n, '0', ',', '.');
+}
+
+// Посчитать грузоподъемность каждого корабля, и общую грузоподъемность (если tot=1).
+function calc_cargo (tot)
+{
+    var cargo = 0;
+    for (id=202; id<216; id++)
+    {
+        if (id == 210 || id == 212) continue;
+        var num = document.getElementById ('o' + id).value;
+        var elem = document.getElementById ('c' + id);
+        num = php_str_replace (".", "", num);
+        c = cargoTab[id-202] * num;
+        cargo += parseInt (c);
+        elem.innerHTML = nicenum (c);
+    }
+    if (tot) my_form.cargo.value = nicenum (cargo);
+}
+
+// Очистить все поля.
+function clearAll ()
+{
+    for (id=202; id<216; id++)
+    {
+        if (id == 210 || id == 212) continue;
+        document.getElementById ('o' + id).value = '';
+        document.getElementById ('c' + id).innerHTML = '';
+    }
+    my_form.cargo.value = 0;
+}
+
+// Произвести захват ресурсов.
+function plunder ()
+{
+    var res = '<i>';
+
+    calc_cargo (0);
+
+    var m = my_form.m.value;    m = php_str_replace (".", "", m);        // Получить количество металла, кристалла и дейтерия.
+    var k = my_form.k.value;    k = php_str_replace (".", "", k);
+    var d = my_form.d.value;    d = php_str_replace (".", "", d);
+    var cargo = my_form.cargo.value;  cargo = php_str_replace (".", "", cargo);    // Грузоподъемность
+    m = parseInt (m); k = parseInt (k); d = parseInt (d);
+    cargo = parseInt (cargo);
+    if (m == undefined) m = 0;
+    if (k == undefined) k = 0;
+    if (d == undefined) d = 0;
+    cargo = parseInt (cargo);
+    if (cargo == undefined) cargo = 0;
+
+    total = m+k+d;
+    res += 'Всего ресурсов: ' + nicenum (total) + ' ед.<br>\n';
+
+    m /=2; k/=2; d /= 2;
+    total = m+k+d;
+    res += 'Можно ограбить на ' + nicenum(m) + ' металла, ' + nicenum(k) + ' кристалла и ' + nicenum(d) + ' дейтерия<br>\n';
+
+    res += 'Общая грузоподъемность флота: ' + nicenum(cargo) + '<br>\n';
+
+    oldcargo = cargo;
+    mc = cargo / 3;
+    if (m < mc) mc = m;
+    cargo = cargo - mc;
+    kc = cargo / 2;
+    if (k < kc) kc = k;
+    cargo = cargo - kc;
+    dc = cargo;
+    if (d < dc)
+    {
+        dc = d;
+        cargo = cargo - dc;
+        m = m - mc;
+        half = cargo / 2;
+        bonus = half;
+        if (m < half) bonus = m;
+        mc += bonus;
+        cargo = cargo - bonus;
+        k = k - kc;
+        if (k < cargo) kc += k;
+        else kc += cargo;
+    }
+
+    totc = mc + kc + dc;
+    prc = Math.floor ((totc * 100) / total);
+
+    res += 'Захвачено ' + nicenum(mc) + ' металла, ' + nicenum(kc) + ' кристалла и ' + nicenum(dc) + ' дейтерия ('+prc+'%)<br>\n';
+    if ((oldcargo-totc) > 0) res += 'Осталось места ' + nicenum(oldcargo-totc) + '<br>\n';
+
+    res += '</i>';
+    document.getElementById('result').innerHTML = res;
+}
+
+// Возвращает количество кораблей, вместимостью cargo, которыми нужно вывезсти m металла, k кристалла и d дейтерия.
+function shipCount (m, k, d, cargo)
+{
+    total = m + k + d;
+    if (cargo == 0 || total == 0) return 0;
+    if (total < cargo) return 1;
+    return Math.ceil ((Math.ceil (Math.max (total, Math.min (0.75 * (m * 2 + k + d), m * 2 + d))) ) / cargo);
+}
+
+// Посчитать сколько нужно кораблей каждого типа чтобы вывезти столько ресурсов.
+function howMuch ()
+{
+    var res = '<i>';
+
+    var m = my_form.m.value;    m = php_str_replace (".", "", m);        // Получить количество металла, кристалла и дейтерия.
+    var k = my_form.k.value;    k = php_str_replace (".", "", k);
+    var d = my_form.d.value;    d = php_str_replace (".", "", d);
+    m = parseInt (m); k = parseInt (k); d = parseInt (d);
+
+    total = m+k+d;
+    res += 'Всего ресурсов: ' + nicenum (total) + ' ед.<br>\n';
+
+    m /=2; k/=2; d /= 2;
+    total = m+k+d;
+    res += 'Можно ограбить на ' + nicenum(m) + ' металла, ' + nicenum(k) + ' кристалла и ' + nicenum(d) + ' дейтерия<br>\n';
+
+    for (id=202; id<216; id++)
+    {
+        if (id == 210 || id == 212) continue;
+        document.getElementById ('o' + id).value = shipCount (m, k, d, cargoTab[id-202]);
+    }
+    calc_cargo (0);
+
+    res += '</i>';
+    document.getElementById('result').innerHTML = res;
+}
+
+// Зачистить планету в указанное количество волн.
+function wipeout ()
+{
+    res = '<i>';
+    var m = my_form.m.value;    m = php_str_replace (".", "", m);        // Получить количество металла, кристалла и дейтерия.
+    var k = my_form.k.value;    k = php_str_replace (".", "", k);
+    var d = my_form.d.value;    d = php_str_replace (".", "", d);
+    m = parseInt (m); k = parseInt (k); d = parseInt (d);
+    waves = my_form.waves.value;
+    if (waves > 10) waves = 10;
+    if (waves < 2) waves = 2;
+
+    tot = m + k + d;
+    cm = ck = cd = 0;
+
+    for (wave=1; wave<=waves; wave++)
+    {
+        res += '<b>Волна ' + wave + '</b><br>\n';
+        m /=2; k/=2; d /= 2;
+        cm += m; ck += k; cd += d;
+        res += 'Можно ограбить на ' + nicenum(m) + ' металла, ' + nicenum(k) + ' кристалла и ' + nicenum(d) + ' дейтерия<br>\n';
+        res += 'Малый транспорт: ' + nicenum(shipCount (m,k,d,5000)) + ', Большой транспорт: ' + nicenum(shipCount (m,k,d,25000)) + ', Линкор: ' + nicenum(shipCount (m,k,d,1500)) + '<br>\n';
+    }
+    totc = cm + ck + cd;
+    prc = Math.ceil ((totc * 100) / tot);
+    res += 'Всего: ' +nicenum(cm)+ ' металла, ' +nicenum(ck)+ ' кристалла и ' +nicenum(cd)+ ' дейтерия ('+prc+'%)<br>\n';
+
+    res += '</i>';
+    document.getElementById('result').innerHTML = res;
+}
+
+function onBodyLoad ()
+{
+    my_form.m.value = my_form.k.value = my_form.d.value = 0;
+    my_form.waves.value = 3;
+}
+
+</script>
+</head>
+
+<body onLoad='onBodyLoad();'>
+
+<br>
+
+<form action='#' name='my_form' style='margin: 20px;'>
+
+<table>
+<tr><td>Металл</td> <td><input type='text' size='8' name='m'></td></tr>
+<tr><td>Кристалл</td> <td><input type='text' size='8' name='k'></td></tr>
+<tr><td>Дейтерий</td> <td><input type='text' size='8' name='d'></td></tr>
+<tr><td>&nbsp;</td></tr>
+</table>
+
+<table>
+<tr><td>Малый транспорт</td> <td><input type='text' size='4' id='o202' onchange='calc_cargo(1);'> <td><div id='c202'> </div></td> </td></tr>
+<tr><td>Большой транспорт</td> <td><input type='text' size='4' id='o203' onchange='calc_cargo(1);'> <td><div id='c203'> </div></td> </td></tr>
+<tr><td>Лёгкий истребитель</td> <td><input type='text' size='4' id='o204' onchange='calc_cargo(1);'> <td><div id='c204'> </div></td> </td></tr>
+<tr><td>Тяжёлый истребитель</td> <td><input type='text' size='4' id='o205' onchange='calc_cargo(1);'> <td><div id='c205'> </div></td> </td></tr>
+<tr><td>Крейсер</td> <td><input type='text' size='4' id='o206' onchange='calc_cargo(1);'> <td><div id='c206'> </div></td> </td></tr>
+<tr><td>Линкор</td> <td><input type='text' size='4' id='o207' onchange='calc_cargo(1);'> <td><div id='c207'> </div></td> </td></tr>
+<tr><td>Колонизатор</td> <td><input type='text' size='4' id='o208' onchange='calc_cargo(1);'> <td><div id='c208'> </div></td> </td></tr>
+<tr><td>Переработчик</td> <td><input type='text' size='4' id='o209' onchange='calc_cargo(1);'> <td><div id='c209'> </div></td> </td></tr>
+<tr><td>Бомбардировщик</td> <td><input type='text' size='4' id='o211' onchange='calc_cargo(1);'> <td><div id='c211'> </div></td> </td></tr>
+<tr><td>Уничтожитель</td> <td><input type='text' size='4' id='o213' onchange='calc_cargo(1);'> <td><div id='c213'> </div></td> </td></tr>
+<tr><td>Звезда смерти</td> <td><input type='text' size='4' id='o214' onchange='calc_cargo(1);'> <td><div id='c214'> </div></td> </td></tr>
+<tr><td>Линейный крейсер</td> <td><input type='text' size='4' id='o215' onchange='calc_cargo(1);'> <td><div id='c215'> </div></td> </td></tr>
+<tr><td>Общая грузоподъемность</td> <td><input type='text' size='8' name='cargo'> <td></td> </td></tr>
+<tr><td>&nbsp;</td></tr>
+</table>
+
+<input type=button value='Ограбить' onClick='plunder();' >
+&nbsp; &nbsp; &nbsp;
+<input type=button value='Очистить' onClick='clearAll();' >
+&nbsp; &nbsp; &nbsp;
+<input type=button value='Количество' onClick='howMuch();' >
+&nbsp; &nbsp; &nbsp;
+<input type=button value='Зачистка' onClick='wipeout();' > <input type='text' size='1' name='waves'> волн.
+
+</form>
+
+<table>
+<tr><td><div id='result'></div></td></tr>
+</table>
+
+<table>
+<tr><td><div id='debug'></div></td></tr>
+</table>
+
+</body>
+</html>

@@ -1,0 +1,161 @@
+
+<html>
+
+<head>
+<title>Яйцехват</title>
+<meta http-equiv='content-type' content='text/html; charset=utf-8' />
+</head>
+
+<body>
+
+<script type="text/javascript">
+
+function trim(string)
+{
+return string.replace(/(^\s+)|(\s+$)/g, "");
+}
+
+Array.prototype.clean = function(remove_item){
+    var a;
+    for (a = 0; a < this.length; a++){
+    if (this[a] == remove_item){
+    this.splice(a,1);a--;}
+}return this;}
+
+function remove_empty_lines (text)
+{
+    text = text.replace(/\r/g,'');
+    text = text.split('\n');
+    text = text.clean('');
+    text = text.clean(' ');
+    text = text.join('\n');
+    return text;
+}
+
+function parse (sex)
+{
+    var text = remove_empty_lines ( document.getElementById ("text").value );
+    var html = "";
+
+// Таро брюзжит как старый дед
+
+    timeout = 9999;
+
+    // Распарсить
+    alarm_hit = false;
+    seconds = 0;
+    counter = 1;
+    target_moon = 0;
+    html += "<table>";
+    html += "<tr><td>&nbsp;</td><td>от кого</td><td>на кого</td><td>откуда</td><td>куда</td><td>отправлен</td><td>прибывает</td></tr>\n";
+    while (timeout--)
+    {
+        pos = text.indexOf ("Шпионаж 6");
+        if ( pos == -1 ) break;;
+        text = text.substr ( pos );
+
+        s = 0;                            // Шпионаж 6
+        e = text.indexOf ( "\n", s );
+
+        s = e + 1;                        // от кого
+        e = text.indexOf ( "\n", s );
+        name1 = text.substr ( s, e-s );
+
+        s = e + 1;                        // на кого
+        e = text.indexOf ( "\n", s );
+        name2 = text.substr ( s, e-s );
+
+        s = e + 1;                        // тип задания
+        e = text.indexOf ( "\n", s );
+        mission = text.substr ( s, e-s );
+        if ( mission.indexOf ( "Возвращение к планете" ) != -1 )
+        {
+            text = text.substr ( e );
+            continue;
+        }
+
+        s = e + 1;                        // координаты
+        e = text.indexOf ( "\n", s );
+        coords = trim (text.substr ( s, e-s ));
+
+        s1 = 0;
+        e1 = coords.indexOf ( "(?)" );
+        coord1 = trim (coords.substr ( s1, e1-s1 ));        
+        s1 = e1+3;
+        coord2 = trim (coords.substr ( s1));
+
+        s = text.indexOf ( "-", e+1) - 4;            // время
+        e = s + 19;
+        time1 = trim ( text.substr ( s, e-s ) );
+
+        s = text.indexOf ( "-", e+1) - 4;
+        e = s + 19;
+        time2 = trim ( text.substr ( s, e-s ) );
+
+        // постобработка (вырезаем лишний мусор)
+        pos = name1.indexOf ("*");
+        if ( pos > 0 ) name1 = name1.substr ( 0, pos );
+        pos = name2.indexOf ("*");
+        if ( pos > 0 ) name2 = name2.substr ( 0, pos );
+        pos = coord1.indexOf ("(?)");
+        if ( pos > 0 ) coord1 = coord1.substr ( 0, pos );
+        pos = coord2.indexOf ("(?)");
+        if ( pos > 0 ) coord2 = coord2.substr ( 0, pos );
+
+        prev_target_moon = target_moon;
+        target_moon = (coord2.indexOf ( "(M)" ) != -1);
+
+        prev_seconds = seconds;
+        date1 = new Date(time1.replace(/(\d+)-(\d+)-(\d+)/, '$2/$3/$1')) ;
+        seconds = date1.getTime () / 1000;
+        if ( Math.abs ( prev_seconds - seconds ) <= 5 && (target_moon || prev_target_moon) ) { alarm = "<font color=red><b>ALARM</b></font>"; alarm_hit = true; }
+        else alarm = "";
+
+        html += "<tr><td>"+counter+"</td><td>"+name1+"</td><td>"+name2+"</td><td>"+coord1+"</td><td>"+coord2+"</td><td>"+time1+"</td><td>"+time2+" "+alarm+"</td></tr>\n";
+        text = text.substr ( e );
+        counter++;
+    }
+    html += "</table>";
+
+    if (alarm_hit)
+    {
+        if (sex)
+        {
+            html += "<img src=\"http://ogamespec.com/imgstore/whc4ddc189b5befb.jpg\"> А еще я умею заваривать кофе ^_^<br>";
+        }
+        else
+        {
+            html += "- Чё молчал-то?<br>";
+            html += "- Глухонемой был :(<br>";
+        }
+    }
+
+    res = document.getElementById ("res");
+    res.innerHTML = html;
+}
+
+</script>
+
+<table>
+<tr><th><img src="http://ogamespec.com/imgstore/whc4dd414e4d55f9.jpg"></th></tr>
+<tr><th>Ударная группа Саблезубые Тигры P R E S E N T S</th></tr>
+</table>
+
+<br>
+
+Контроль за мракобесами:<br>
+- Открыть контроль полётов<br>
+- Открыть Шпионаж<br>
+- Скопировать весь текст страницы (Ctrl+A - выделить всё, Ctrl+C - скопировать всё)<br>
+- Вставить в это поле (Ctrl+V - вставить), схватить за яйца<br>
+
+<textarea id="text" cols=80 rows=25>
+</textarea>
+</br>
+<input type=button onclick="parse(0);" value="схватить за яйца">
+<input type=button onclick="parse(1);" value="покрутить соски">
+
+<div id="res"></div>
+
+</body>
+</html>

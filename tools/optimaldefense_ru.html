@@ -1,0 +1,511 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+  <link rel="icon" type="image/png" href="http://bontchev.my.contact.bg/ogame/favicon.png">
+  <link rel="SHORTCUT ICON" href="http://bontchev.my.contact.bg/ogame/favicon.png">
+  <title>Оптимальная Оборона</title>
+</head>
+<body background="../images/od_background.jpg" bgcolor="midnightblue" bgproperties="fixed">
+  <style type="text/css">
+  <!--
+body
+{
+    color: #E6EBFB;
+    font-family: Tahoma,sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+}
+.cell
+{
+    padding-right: 5px;
+    padding-left: 5px;
+}
+  -->
+  </style>
+<script type="text/javascript">
+function retPosNum (s)
+{
+    var sxx = '';
+    s += '';
+    var sx = s.toUpperCase ();
+    for (var i = 0; i < sx.length; i++)
+        if (sx.charCodeAt (i) >= 48 && sx.charCodeAt (i) <= 57)
+            sxx += sx.charAt (i);
+    return sxx;
+}
+
+function retInt (s)
+{
+    var sxx = '';
+    s += '';
+    var sx = s.toUpperCase ();
+    for (var i = 0; i < sx.length; i++)
+    {
+        if ((sx.charCodeAt (i) >= 48 && sx.charCodeAt (i) <= 57) || (i == 0 && sx.charCodeAt (i) == 45))
+            sxx += sx.charAt (i);
+    }
+    return sxx;
+}
+
+function chkPosNum (id)
+{
+    if (id.value != retPosNum (id.value))
+        id.value = retPosNum (id.value);
+}
+
+function chkInt (id)
+{
+    if (id.value != retInt (id.value))
+        id.value = retInt (id.value);
+}
+
+function chkval (id)
+{
+    if (id.value == '')
+        id.value = '0';
+}
+
+function addDots (n)
+{
+    if (isNaN (n))
+        return "0";
+    n += '';
+    var rgx = /(\d+)(\d{3})/;
+    while (rgx.test (n))
+        n = n.replace (rgx, '$1' + '.' + '$2');
+    return n;
+}
+
+function compute ()
+{
+    var debris = [
+        ["SC", 0.3 *   4000],
+        ["LC", 0.3 *  12000],
+        ["LF", 0.3 *   4000],
+        ["HF", 0.3 *  10000],
+        ["CR", 0.3 *  27000],
+        ["BS", 0.3 *  60000],
+        ["CS", 0.3 *  30000],
+        ["RC", 0.3 *  16000],
+        ["EP", 0.3 *   1000],
+        ["BM", 0.3 *  75000],
+        ["SS", 0.3 *   2000],
+        ["DR", 0.3 * 110000],
+        ["DS", 0.3 * 900000],
+        ["BC", 0.3 *  70000]
+    ];
+    var totDebris = 0;
+    for (var i = 0; i < debris.length; i++)
+    {
+        var thisDebris = parseInt (document.getElementById ("num" + debris [i] [0]).value) * debris [i] [1];
+        document.getElementById ("debris" + debris [i] [0]).firstChild.nodeValue = addDots (thisDebris);
+        totDebris += thisDebris;
+    }
+    document.getElementById ("debrisTotal").firstChild.nodeValue = addDots (totDebris);
+
+    var option, level, pct;
+    var geologist = document.getElementById ("geologist").checked;
+
+    option = document.getElementById ("metPct");
+    level  = parseInt (document.getElementById ("metLevel").value);
+    if (isNaN (level))
+        level = 0;
+    pct    = parseInt (option.options [option.selectedIndex].value) / 100;
+    var metProd = 30 * level * Math.pow (1.1, level) * pct;
+    if (geologist)
+        metProd *= 1.1;
+    metProd += 20;
+    document.getElementById ("metProd").firstChild.nodeValue = addDots (Math.round (metProd));
+
+    option = document.getElementById ("cryPct");
+    level  = parseInt (document.getElementById ("cryLevel").value);
+    if (isNaN (level))
+        level = 0;
+    pct    = parseInt (option.options [option.selectedIndex].value) / 100;
+    var cryProd = 20 * level * Math.pow (1.1, level) * pct;
+    if (geologist)
+        cryProd *= 1.1;
+    cryProd += 10;
+    document.getElementById ("cryProd").firstChild.nodeValue = addDots (Math.round (cryProd));
+
+    option = document.getElementById ("deuPct");
+    level  = parseInt (document.getElementById ("deuLevel").value);
+    if (isNaN (level))
+        level = 0;
+    pct    = parseInt (option.options [option.selectedIndex].value) / 100;
+    var deuProd = 10 * level * Math.pow (1.1, level);
+    if (document.getElementById ("oldVersion").checked)
+        deuProd *= (1.28 - 0.002 * (parseInt (document.getElementById ("maxTemp").value)     )) * pct;
+    else
+        deuProd *= (1.36 - 0.004 * (parseInt (document.getElementById ("maxTemp").value) - 20)) * pct;
+    if (geologist)
+        deuProd *= 1.1;
+    document.getElementById ("deuProd").firstChild.nodeValue = addDots (Math.round (deuProd));
+
+    option = document.getElementById ("fusPct");
+    level  = parseInt (document.getElementById ("fusLevel").value);
+    if (isNaN (level))
+        level = 0;
+    pct    = parseInt (option.options [option.selectedIndex].value) / 100;
+    var fusProd = 10 * level * Math.pow (1.1, level) * pct;
+    if (fusProd > deuProd)
+        fusProd = deuProd;
+    fusProd = -fusProd;
+    document.getElementById ("fusProd").firstChild.nodeValue = addDots (Math.round (fusProd));
+
+    var totalProdPerHour = metProd + cryProd + deuProd + fusProd;
+    document.getElementById ("prodHour").firstChild.nodeValue = addDots (Math.floor (totalProdPerHour));
+    var hours = parseInt (document.getElementById ("hours").value);
+    var totalProd = (metProd + cryProd + deuProd + fusProd) * hours;
+    document.getElementById ("totalProd").firstChild.nodeValue = addDots (Math.floor (totalProd));
+    document.getElementById ("totalProdDetails").firstChild.nodeValue = "(" +
+        addDots (Math.floor (metProd) * hours) + " + " +
+        addDots (Math.floor (cryProd) * hours) + " + " +
+        addDots (Math.floor ((deuProd + fusProd)) * hours) + ")";
+    var totalLoot = totDebris + (totalProd / 2);
+
+    var neededLL = Math.ceil (93 * totalLoot / 100000);
+    var neededHL = Math.ceil (36 * totalLoot / 100000);
+    var neededGC = Math.ceil ( 9 * totalLoot / 100000);
+    var neededPT = Math.ceil ( 6 * totalLoot / 100000);
+    document.getElementById ("neededLL").firstChild.nodeValue = addDots (neededLL);
+    document.getElementById ("neededHL").firstChild.nodeValue = addDots (neededHL);
+    document.getElementById ("neededGC").firstChild.nodeValue = addDots (neededGC);
+    document.getElementById ("neededPT").firstChild.nodeValue = addDots (neededPT);
+
+    var totalMet = 1500 * neededLL + 6000 * neededHL + 20000 * neededGC + 50000 * neededPT;
+    var totalCry =  500 * neededLL + 2000 * neededHL + 15000 * neededGC + 50000 * neededPT;
+    var totalDeu =                                      2000 * neededGC + 30000 * neededPT;
+    var totalRes = totalMet + totalCry + totalDeu;
+    document.getElementById ("metTotal").firstChild.nodeValue = addDots (totalMet);
+    document.getElementById ("cryTotal").firstChild.nodeValue = addDots (totalCry);
+    document.getElementById ("deuTotal").firstChild.nodeValue = addDots (totalDeu);
+    document.getElementById ("totalLC").firstChild.nodeValue  = addDots (addDots (Math.ceil (totalRes / 25000)));
+    document.getElementById ("totalSC").firstChild.nodeValue  = addDots (addDots (Math.ceil (totalRes /  5000)));
+}
+
+function setCheckedValue (radioObj, newValue)
+{
+    if (! radioObj)
+        return;
+    var radioLength = radioObj.length;
+    if (radioLength == undefined)
+    {
+        radioObj.checked = (radioObj.value == newValue.toString ());
+        return;
+    }
+    for (var i = 0; i < radioLength; i++)
+    {
+        radioObj [i].checked = false;
+        if (radioObj [i].value == newValue.toString ())
+            radioObj[i].checked = true;
+    }
+}
+
+function speedSim ()
+{
+    var number, i;
+    var resNames = [["met", "metal"], ["cry", "crystal"], ["deu", "deut"]];
+    var defNames = [["LL", "15"], ["HL", "16"], ["GC", "17"], ["PT", "19"]];
+    var shipNames = ["SC", "LC", "LF", "HF", "CR", "BS", "CS", "RC", "EP", "BM", "SS", "DR", "DS", "BC"];
+    var url = "http://websim.speedsim.net/?lang=ru";
+    for (i = 0; i < resNames.length; i++)
+    {
+        number = document.getElementById (resNames [i] [0] + "Prod").firstChild.nodeValue.replace (/\D+/, "");
+        if (number != undefined)
+            url += "&enemy_" + resNames [i] [1] + "=" + number;
+    }
+    for (i = 0; i < shipNames.length; i++)
+    {
+        number = document.getElementById ("num" + shipNames [i]).value;
+        if (number > 0)
+            url += "&ship_d0_" + i + "_b="   + number;
+    }
+    for (i = 0; i < defNames.length; i++)
+    {
+        number = document.getElementById ("needed" + defNames [i] [0]).firstChild.nodeValue.replace (/\D+/, "");
+        if (number)
+            url += "&ship_d0_" + defNames [i] [1] + "_b="  + number;
+    }
+    window.open (url);
+}
+
+function clearFleet ()
+{
+    var shipNames = ["SC", "LC", "LF", "HF", "CR", "BS", "CS", "RC", "EP", "BM", "SS", "DR", "DS", "BC"];
+    for (var i = 0; i < shipNames.length; i++)
+        document.getElementById ("num" + shipNames [i]).value = 0;
+    compute ();
+}
+
+function clearMines ()
+{
+    var mineNames = ["met", "cry", "deu", "fus"];
+    for (var i = 0; i < mineNames.length; i++)
+    {
+        document.getElementById (mineNames [i] + "Level").value = 0;
+        document.getElementById (mineNames [i] + "Pct").value = "100%";
+    }
+    document.getElementById ("maxTemp").value = 0;
+    document.getElementById ("hours").value = 0;
+    compute ();
+}
+
+setCheckedValue ("version", "old");
+
+window.onload = compute;
+</script>
+
+<center>
+<h1>OGame - Оптимальная Оборона</h1>
+<table border="1" cellpadding="2">
+  <tr>
+    <td class="cell" align="center" colspan="7">
+       <table width="100%">
+         <tr>
+           <td class="cell" align="center">
+             <input type="radio" id="oldVersion" name="version" value="old" CHECKED onclick="compute ();">Старый Дизайн (v0.84)
+             <input type="radio" id="newVersion" name="version" value="new" onclick="compute ();">Редизайн (v1.x)
+          </td>
+
+          <td class="cell" align="right">
+             <input type="checkbox" id="geologist" name="geologist" onclick="compute ();">Геолог +10% доход от шахты
+          </td>
+        </tr>
+       </table>
+    </td>
+  </tr>
+  <tr>
+    <td class="cell" align="center">Незасейвленный Флот:</td>
+
+    <td class="cell" align="center"><button id="clearFleet" name="x" type="button" onclick="clearFleet ();">x</button>&nbsp;Кол-во:</td>
+    <td class="cell" align="center" width="80">Лома:</td>
+    <td class="cell" align="center">Шахты:</td>
+    <td class="cell" align="center"><button id="clearMines" name="x" type="button" onclick="clearMines ();">x</button>&nbsp;Уровень:</td>
+    <td class="cell" align="center">Процент:</td>
+
+    <td class="cell" align="center">Выработка в час:</td>
+  </tr>
+  <tr>
+    <td class="cell">Малый транспорт:</td>
+    <td class="cell" align="right"><input id="numSC" size="11" value="0" tabindex="1" style="text-align: right" onblur="chkval (this);" onkeyup="chkPosNum (this); compute ();"></td>
+    <td class="cell" align="right"><span id="debrisSC">0</span></td>
+    <td class="cell">Рудник по добыче металла:</td>
+
+    <td class="cell" align="right"><input id="metLevel" size="12" value="0" tabindex="15" style="text-align: right" onblur="chkval (this);" onkeyup="chkPosNum (this); compute ();"></td>
+    <td class="cell" align="center">
+      <select id="metPct" tabindex="16" onChange="compute ();">
+      <option selected="selected" value="100%">100%</option>
+      <option value="90%">90%</option>
+      <option value="80%">80%</option>
+      <option value="70%">70%</option>
+
+      <option value="60%">60%</option>
+      <option value="50%">50%</option>
+      <option value="40%">40%</option>
+      <option value="30%">30%</option>
+      <option value="20%">20%</option>
+      <option value="10%">10%</option>
+
+      <option value="0%">0%</option>
+      </select>
+    </td>
+    <td class="cell" align="right"><span id="metProd">0</span></td>
+  </tr>
+  <tr>
+    <td class="cell">Большой транспорт:</td>
+
+    <td class="cell" align="right"><input id="numLC" size="11" value="0" tabindex="2" style="text-align: right" onblur="chkval (this);" onkeyup="chkPosNum (this); compute ();"></td>
+    <td class="cell" align="right"><span id="debrisLC">0</span></td>
+    <td class="cell">Рудник по добыче кристалла:</td>
+    <td class="cell" align="right"><input id="cryLevel" size="12" value="0" tabindex="17" style="text-align: right" onblur="chkval (this);" onkeyup="chkPosNum (this); compute ();"></td>
+    <td class="cell" align="center">
+      <select id="cryPct" tabindex="18" onChange="compute ();">
+      <option selected="selected">100%</option>
+
+      <option>90%</option>
+      <option>80%</option>
+      <option>70%</option>
+      <option>60%</option>
+      <option>50%</option>
+      <option>40%</option>
+
+      <option>30%</option>
+      <option>20%</option>
+      <option>10%</option>
+      <option>0%</option>
+      </select>
+    </td>
+    <td class="cell" align="right"><span id="cryProd">0</span></td>
+
+  </tr>
+  <tr>
+    <td class="cell">Лёгкий истребитель:</td>
+    <td class="cell" align="right"><input id="numLF" size="11" value="0" tabindex="3" style="text-align: right" onblur="chkval (this);" onkeyup="chkPosNum (this); compute ();"></td>
+    <td class="cell" align="right"><span id="debrisLF">0</span></td>
+    <td class="cell">Синтезатор дейтерия:</td>
+    <td class="cell" align="right"><input id="deuLevel" size="12" value="0" tabindex="19" style="text-align: right" onblur="chkval (this);" onkeyup="chkPosNum (this); compute ();"></td>
+
+    <td class="cell" align="center">
+      <select id="deuPct" tabindex="20" onChange="compute ();">
+      <option selected="selected">100%</option>
+      <option>90%</option>
+      <option>80%</option>
+      <option>70%</option>
+      <option>60%</option>
+
+      <option>50%</option>
+      <option>40%</option>
+      <option>30%</option>
+      <option>20%</option>
+      <option>10%</option>
+      <option>0%</option>
+
+      </select>
+    </td>
+    <td class="cell" align="right"><span id="deuProd">0</span></td>
+  </tr>
+  <tr>
+    <td class="cell">Тяжёлый истребитель:</td>
+    <td class="cell" align="right"><input id="numHF" size="11" value="0" tabindex="4" style="text-align: right" onblur="chkval (this);" onkeyup="chkPosNum (this); compute ();"></td>
+    <td class="cell" align="right"><span id="debrisHF">0</span></td>
+
+    <td class="cell">Термоядерная электростанция:</td>
+    <td class="cell" align="right"><input id="fusLevel" size="12" value="0" tabindex="21" style="text-align: right" onblur="chkval (this);" onkeyup="chkPosNum (this); compute ();"></td>
+    <td class="cell" align="center">
+      <select id="fusPct" tabindex="22" onChange="compute ();">
+      <option selected="selected">100%</option>
+      <option>90%</option>
+      <option>80%</option>
+
+      <option>70%</option>
+      <option>60%</option>
+      <option>50%</option>
+      <option>40%</option>
+      <option>30%</option>
+      <option>20%</option>
+
+      <option>10%</option>
+      <option>0%</option>
+      </select>
+    </td>
+    <td class="cell" align="right"><font color="red"><span id="fusProd">0</span></font></td>
+  </tr>
+  <tr>
+
+    <td class="cell">Крейсер:</td>
+    <td class="cell" align="right"><input id="numCR" size="11" value="0" tabindex="5" style="text-align: right" onblur="chkval (this);" onkeyup="chkPosNum (this); compute ();"></td>
+    <td class="cell" align="right"><span id="debrisCR">0</span></td>
+    <td class="cell">Максимальная температура:</td>
+    <td class="cell" align="right"><input id="maxTemp" size="12" value="0" tabindex="23" style="text-align: right" onblur="chkval (this);" onkeyup="chkInt (this); compute ();"></td>
+    <td class="cell" colspan="2" align="center">Общая выработка:</td>
+  </tr>
+
+  <tr>
+    <td class="cell">Линкор:</td>
+    <td class="cell" align="right"><input id="numBS" size="11" value="0" tabindex="6" style="text-align: right" onblur="chkval (this);" onkeyup="chkPosNum (this); compute ();"></td>
+    <td class="cell" align="right"><span id="debrisBS">0</span></td>
+    <td class="cell" align="right">Выработка в час:</td>
+    <td class="cell" align="right"><span id="prodHour">0</span></td>
+    <td class="cell" colspan="2" align="right"><span id="totalProd">0</span></td>
+
+  </tr>
+  <tr>
+    <td class="cell">Колонизатор:</td>
+    <td class="cell" align="right"><input id="numCS" size="11" value="0" tabindex="7" style="text-align: right" onblur="chkval (this);" onkeyup="chkPosNum (this); compute ();"></td>
+    <td class="cell" align="right"><span id="debrisCS">0</span></td>
+    <td class="cell" align="right">Часов простоя:</td>
+    <td class="cell" align="right"><input id="hours" size="12" value="0" tabindex="24" style="text-align: right" onblur="chkval (this);" onkeyup="chkPosNum (this); compute ();"></td>
+
+    <td class="cell" align="right" colspan="2"><span id="totalProdDetails">(0 + 0 + 0)</span></td>
+  </tr>
+  <tr>
+    <td class="cell">Переработчик:</td>
+    <td class="cell" align="right"><input id="numRC" size="11" value="0" tabindex="8" style="text-align: right" onblur="chkval (this);" onkeyup="chkPosNum (this); compute ();"></td>
+    <td class="cell" align="right"><span id="debrisRC">0</span></td>
+    <td class="cell"></td>
+
+    <td class="cell" align="center" colspan="3"><font color=lime>Нужно обороны</font></td>
+  </tr>
+  <tr>
+    <td class="cell">Шпионский зонд:</td>
+    <td class="cell" align="right"><input id="numEP" size="11" value="0" tabindex="9" style="text-align: right" onblur="chkval (this);" onkeyup="chkPosNum (this); compute ();"></td>
+    <td class="cell" align="right"><span id="debrisEP">0</span></td>
+    <td class="cell"></td>
+
+    <td class="cell">Лёгкий лазер:</td>
+    <td class="cell" align="right" bgcolor="lime" style="color: black"><span id="neededLL">0</span></td>
+    <td class="cell"></td>
+  </tr>
+  <tr>
+    <td class="cell">Бомбардировщик:</td>
+    <td class="cell" align="right"><input id="numBM" size="11" value="0" tabindex="10" style="text-align: right" onblur="chkval (this);" onkeyup="chkPosNum (this); compute ();"></td>
+
+    <td class="cell" align="right"><span id="debrisBM">0</span></td>
+    <td class="cell"></td>
+    <td class="cell">Тяжёлый лазер:</td>
+    <td class="cell" align="right" bgcolor="lime" style="color: black"><span id="neededHL">0</span></td>
+    <td class="cell"></td>
+  </tr>
+  <tr>
+
+    <td class="cell">Солнечный спутник:</td>
+    <td class="cell" align="right"><input id="numSS" size="11" value="0" tabindex="11" style="text-align: right" onblur="chkval (this);" onkeyup="chkPosNum (this); compute ();"></td>
+    <td class="cell" align="right"><span id="debrisSS">0</span></td>
+    <td class="cell"></td>
+    <td class="cell">Пушка Гаусса:</td>
+    <td class="cell" align="right" bgcolor="lime" style="color: black"><span id="neededGC">0</span></td>
+    <td class="cell"></td>
+
+  </tr>
+  <tr>
+    <td class="cell">Уничтожитель:</td>
+    <td class="cell" align="right"><input id="numDR" size="11" value="0" tabindex="12" style="text-align: right" onblur="chkval (this);" onkeyup="chkPosNum (this); compute ();"></td>
+    <td class="cell" align="right"><span id="debrisDR">0</span></td>
+    <td class="cell"></td>
+    <td class="cell">Плазменное орудие:</td>
+
+    <td class="cell" align="right" bgcolor="lime" style="color: black"><span id="neededPT">0</span></td>
+    <td class="cell"></td>
+  </tr>
+  <tr>
+    <td class="cell">Звезда смерти:</td>
+    <td class="cell" align="right"><input id="numDS" size="11" value="0" tabindex="13" style="text-align: right" onblur="chkval (this);" onkeyup="chkPosNum (this); compute ();"></td>
+    <td class="cell" align="right"><span id="debrisDS">0</span></td>
+
+    <td class="cell"></td>
+    <td class="cell" align="center" colspan="3">Стоимость обороны:</td>
+  </tr>
+  <tr>
+    <td class="cell">Линейный крейсер:</td>
+    <td class="cell" align="right"><input id="numBC" size="11" value="0" tabindex="14" style="text-align: right" onblur="chkval (this);" onkeyup="chkPosNum (this); compute ();"></td>
+    <td class="cell" align="right"><span id="debrisBC">0</span></td>
+
+    <td class="cell"></td>
+    <td class="cell" align="center">Металл:</td>
+    <td class="cell" align="center">Кристалл:</td>
+    <td class="cell" align="center">Дейтерий:</td>
+  </tr>
+  <tr>
+    <td class="cell" colspan="2" align="right">Всего лома:</td>
+
+    <td class="cell" align="right"><span id="debrisTotal">0</span></td>
+    <td class="cell" align="right">Общая стоимость:</td>
+    <td class="cell" align="right"><span id="metTotal">0</span></td>
+    <td class="cell" align="right"><span id="cryTotal">0</span></td>
+    <td class="cell" align="right"><span id="deuTotal">0</span></td>
+  </tr>
+
+  <tr>
+    <td class="cell" colspan="3" align="center"><button type="button" onclick="speedSim ();" tabindex="24">Симулировать</button></td>
+    <td class="cell" align="right">Нужно БТ:</td>
+    <td class="cell" align="right"><span id="totalLC">0</span></td>
+    <td class="cell" align="right">Нужно МТ:</td>
+    <td class="cell" align="right"><span id="totalSC">0</span></td>
+
+  </tr>
+</table>
+</center>
+</body>
+</html>

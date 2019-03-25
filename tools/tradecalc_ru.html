@@ -1,0 +1,287 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+  <link rel="icon" type="image/png" href="http://bontchev.my.contact.bg/ogame/favicon.png">
+  <link rel="SHORTCUT ICON" href="http://bontchev.my.contact.bg/ogame/favicon.png">
+  <title>Торговый Калькулятор OGame</title>
+</head>
+<body background="../images/od_background.jpg" bgcolor="midnightblue" bgproperties="fixed">
+  <style type="text/css">
+  <!--
+body
+{
+	color: #E6EBFB;
+	font-family: Tahoma,sans-serif;
+	font-size: 12px;
+	font-weight: bold;
+}
+.cell
+{
+	padding-right: 5px;
+	padding-left: 5px;
+}
+  -->
+  </style>
+<script type="text/javascript">
+
+function retPosNum (s)
+{
+	var sxx = "";
+	s += "";
+	var sx = s.toUpperCase ();
+	for (var i = 0; i < sx.length; i++)
+		if (sx.charCodeAt (i) >= 48 && sx.charCodeAt (i) <= 57)
+			sxx += sx.charAt (i);
+	return sxx.replace (/^0+/, "");
+}
+
+function chkPosNum (id)
+{
+	if (id.value != retPosNum (id.value))
+		id.value = retPosNum (id.value);
+	if (id.value == "")
+		id.value = "0";
+}
+
+function retFloat (s)
+{
+	var sxx = "";
+	s += "";
+	var sx = s.toUpperCase ();
+	for (var i = 0; i < sx.length; i++)
+	{
+		if (sx.charCodeAt (i) >= 48 && sx.charCodeAt (i) <= 57 || sx.charCodeAt (i) == 46)
+			sxx += sx.charAt (i);
+	}
+	return sxx.replace (/^0+/, "");
+}
+
+function chkFloat (id)
+{
+	if (id.value != retFloat (id.value))
+		id.value = retFloat (id.value);
+	if (id.value == "")
+		id.value = "0";
+}
+
+function chkval (id)
+{
+	if (id.value == "")
+		id.value = "0";
+}
+
+function chk100 (id)
+{
+	if (parseInt (id.value) > 100)
+		id.value = "100";
+}
+
+function addDots (n)
+{
+	if (isNaN (n))
+		return "0";
+	n += '';
+	var rgx = /(\d+)(\d{3})/;
+	while (rgx.test (n))
+		n = n.replace (rgx, '$1' + '.' + '$2');
+	return n;
+}
+
+function compute ()
+{
+	var resources = ["Металл", "Кристалл", "Дейтерий"];
+	var offerTypes = document.getElementsByName ("offerType");
+	var offerType;
+	for (var i = 0; i < offerTypes.length; i++)
+	{
+		if (offerTypes [i].checked)
+		{
+			offerType = offerTypes [i].value;
+			break;
+		}
+	}
+	switch (offerType)
+	{
+		case "1":
+			document.getElementById ("want1").firstChild.nodeValue = resources [1];
+			document.getElementById ("want2").firstChild.nodeValue = resources [2];
+			document.getElementById ("want3").firstChild.nodeValue = resources [1];
+			break;
+		case "2":
+			document.getElementById ("want1").firstChild.nodeValue = resources [0];
+			document.getElementById ("want2").firstChild.nodeValue = resources [2];
+			document.getElementById ("want3").firstChild.nodeValue = resources [0];
+			break;
+		case "3":
+			document.getElementById ("want1").firstChild.nodeValue = resources [0];
+			document.getElementById ("want2").firstChild.nodeValue = resources [1];
+			document.getElementById ("want3").firstChild.nodeValue = resources [0];
+			break;
+	}
+	var offer = parseInt (document.getElementById ("offer").value);
+	if (offer <= 0)
+		return;
+	var wantTypes = document.getElementsByName ("wantType");
+	var wantType;
+	for (var i = 0; i < wantTypes.length; i++)
+	{
+		if (wantTypes [i].checked)
+		{
+			wantType = wantTypes [i].value;
+			break;
+		}
+	}
+	var r1 = parseFloat (document.getElementById ("r1").value);
+	var r2 = parseFloat (document.getElementById ("r2").value);
+	var r3 = parseFloat (document.getElementById ("r3").value);
+	var want = 0;
+	var wantText = "";
+	var want2 = 0;
+	var wantText2 = "";
+	var p = parseInt (document.getElementById ("mixRatio").value);
+	if ((p <= 0) && (wantType == "3"))
+		wantType = "2";
+	p *= 1.0;
+	switch (wantType)
+	{
+		case "1":
+			switch (offerType)
+			{
+				case "1":
+					want = Math.round (offer * r2 / r1);
+					wantText = resources [1];
+					break;
+				case "2":
+					want = Math.round (offer * r1 / r2);
+					wantText = resources [0];
+					break;
+				case "3":
+					want = Math.round (offer * r1 / r3);
+					wantText = resources [0];
+					break;
+			}
+			break;
+		case "2":
+			switch (offerType)
+			{
+				case "1":
+					want = Math.round (offer * r3 / r1);
+					wantText = resources [2];
+					break;
+				case "2":
+					want = Math.round (offer * r3 / r2);
+					wantText = resources [2];
+					break;
+				case "3":
+					want = Math.round (offer * r2 / r3);
+					wantText = resources [1];
+					break;
+			}
+			break;
+		case "3":
+			switch (offerType)
+			{
+				case "1":
+					want  = Math.round (offer / (r1 / r2 + r1 * (100 - p) / (r3 * p)));
+					want2 = Math.round (want * (100 - p) / p);
+					wantText  = resources [1];
+					wantText2 = resources [2];
+					break;
+				case "2":
+					want  = Math.round (offer / (r2 / r1 + r2 * (100 - p) / (r3 * p)));
+					want2 = Math.round (want * (100 - p) / p);
+					wantText  = resources [0];
+					wantText2 = resources [2];
+					break;
+				case "3":
+					want  = Math.round (offer / (r3 / r1 + r3 * (100 - p) / (r2 * p)));
+					want2 = Math.round (want * (100 - p) / p);
+					wantText  = resources [0];
+					wantText2 = resources [1];
+					break;
+			}
+			break;
+	}
+	var receiveText = addDots (want) + " " + wantText;
+	if (wantType == "3")
+		receiveText += " и " + addDots (want2) + " " + wantText2;
+	receiveText += ".";
+	document.getElementById ("youGet").firstChild.nodeValue = "Вы получите " + receiveText;
+	document.getElementById ("mySC").firstChild.nodeValue   = Math.ceil (offer /  5000);
+	document.getElementById ("myLC").firstChild.nodeValue   = Math.ceil (offer / 25000);
+	document.getElementById ("hisSC").firstChild.nodeValue  = Math.ceil ((want + want2) /  5000);
+	document.getElementById ("hisLC").firstChild.nodeValue  = Math.ceil ((want + want2) / 25000);
+	var offerText = resources [parseInt (offerType) - 1];
+	var tradeTxt = "Продаю " + addDots (offer) + " " + offerText + ". ";
+	tradeTxt += "Покупаю " + receiveText;
+	tradeTxt += " (По курсу " + r1 + ":" + r2 + ":" + r3 + ".)";
+	document.getElementById ("tradeOffer").firstChild.nodeValue = tradeTxt;
+}
+
+function init ()
+{
+	document.getElementsByName ("offerType") [2].checked = true;
+	document.getElementsByName ("wantType")  [0].checked = true;
+	compute ();
+}
+
+window.onload = init;
+
+</script>
+
+<center>
+<h1>Торговый Калькулятор OGame</h1>
+<table border="1" cellpadding="2" width="610">
+  <tr>
+    <td class="cell" align="right">Курсы обмена:</td>
+    <td class="cell" colspan="2" align="center">
+      Металл&nbsp;<input id="r1" value="3" size="2" style="text-align: right" onblur="chkval (this);" onkeyup="chkFloat (this); compute ();">
+      : Кристалл&nbsp;
+
+      <input id="r2" value="2" size="2" style="text-align: right" onblur="chkval (this);" onkeyup="chkFloat (this); compute ();">
+      : Дейтерий&nbsp;
+      <input id="r3" value="1" size="2" style="text-align: right" onblur="chkval (this);" onkeyup="chkFloat (this); compute ();">
+    </td>
+  </tr>
+  <tr>
+    <td class="cell">Что продаем?</td>
+    <td class="cell" align="center"><input id="offer" value="0" size="15" style="text-align: right" onblur="chkval (this);" onkeyup="chkPosNum (this); compute ();"></td>
+
+    <td class="cell" align="center" nowrap>
+      <input type="radio" name="offerType" value="1" onclick="compute ();">&nbsp;Металл
+      <input type="radio" name="offerType" value="2" onclick="compute ();">&nbsp;Кристалл
+      <input type="radio" name="offerType" value="3" onclick="compute ();">&nbsp;Дейтерий
+    </td>
+  </tr>
+  <tr>
+    <td class="cell" nowrap>Что покупаем?</td>
+    <td class="cell" colspan="2" align="center">
+      <input type="radio" name="wantType" value="1" onclick="compute ();">&nbsp;<span id="want1">Металл</span>
+      <input type="radio" name="wantType" value="2" onclick="compute ();">&nbsp;<span id="want2">Кристалл</span>
+      <input type="radio" name="wantType" value="3" onclick="compute ();">&nbsp;Микс (<input id="mixRatio" value="50" size="2" style="text-align: right" onblur="chkval (this);" onkeyup="chkPosNum (this); chk100 (this); compute ();">&nbsp;% <span id="want3">Metal</span>)
+    </td>
+  </tr>
+  <tr>
+    <td class="cell" colspan="3"><font color="lime"><span id="youGet">&nbsp;</span></font></td>
+  </tr>
+
+  <tr>
+    <td class="cell" colspan="3">Для перевозки необходимо <font color="lime"><span id="mySC">0</span></font> Малых транспортов или <font color="lime"><span id="myLC">0</span></font> Больших транспортов.</td>
+  </tr>
+  <tr>
+    <td class="cell" colspan="3">Вашему покупателю необходимо <font color="yellow"><span id="hisSC">0</span></font> Малых транспортов или <font color="yellow"><span id="hisLC">0</span></font> Больших транспортов.</td>
+
+  </tr>
+  <tr>
+    <td class="cell" colspan="3" align="center">Текст заявки:</td>
+  </tr>
+  <tr>
+    <td class="cell" colspan="3"><span id="tradeOffer">&nbsp;</span></td>
+  </tr>
+</table>
+<p>Copyright &copy; 2009 by <a href="mailto:vbontchev@yahoo.com" style="color: white">Vesselin Bontchev</a></p>
+
+</center>
+</body>
+</html>

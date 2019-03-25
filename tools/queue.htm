@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link type="text/css" href="../css/com.css" rel="stylesheet" /> 
+    <title>Конструктор</title>
+
+    <script type="text/javascript" src="jquery/jquery-1.4.min.js"></script>
+    <script type="text/javascript" src="jquery/wtooltip.min.js"></script> 
+    <script type="text/javascript" src="jquery/ui/ui.core.js"></script>
+    <script type="text/javascript" src="jquery/ui/ui.draggable.js"></script>
+    <script type="text/javascript" src="jquery/ui/ui.resizable.js"></script>
+    <script type="text/javascript" src="jquery/ui/ui.sortable.js"></script>
+    <script type="text/javascript" src="jquery/ui/ui.dialog.js"></script>
+    <script type="text/javascript" src="jquery/ui/ui.tabs.js"></script>
+    <script type="text/javascript" src="jquery/ui/ui.slider.js"></script>
+    <script type="text/javascript" src="jquery/ui/ui.accordion.js"></script>
+    <script type="text/javascript" src="jquery/ui/effects.core.js"></script>
+    <script type="text/javascript" src="jquery/ui/effects.slide.js"></script>
+    <script type="text/javascript" src="jquery/ui/effects.drop.js"></script>
+    <script type="text/javascript" src="jquery/external/bgiframe/jquery.bgiframe.js"></script>
+    <script type="text/javascript" src="jquery/jquery-buttons.js"></script>
+
+<script type="text/javascript">
+
+function readCookie(name) {
+    var nameEQ = name + "=";
+    var ca = document.cookie.split(';');
+    for(var i=0;i < ca.length;i++) {
+        var c = ca[i];
+        while (c.charAt(0)==' ') c = c.substring(1,c.length);
+        if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+    }
+    return null;
+}
+
+function createCookie(name,value,days) {
+    if (days) {
+        var date = new Date();
+        date.setTime(date.getTime()+(days*24*60*60*1000));
+        var expires = "; expires="+date.toGMTString();
+    }
+    else var expires = "";
+    document.cookie = name+"="+value+expires+"; path=/";
+}
+
+    comtheme = "trontastic";
+    document.write ("<link type=\"text/css\" href=\"jquery/themes/"+comtheme+"/ui.all.css\" rel=\"stylesheet\" />");
+</script>
+</head>
+
+<body onload="BuildconStart();">
+
+<script type="text/javascript">
+
+    var Version = "0.03";
+
+    var TechNames = {
+     202: "Малый транспорт", 203: "Большой транспорт", 204: "Лёгкий истребитель", 205: "Тяжёлый истребитель", 
+     206: "Крейсер", 207: "Линкор", 208: "Колонизатор", 209: "Переработчик", 210: "Шпионский зонд", 
+     211: "Бомбардировщик", 212: "Солнечный спутник", 213: "Уничтожитель", 214: "Звезда смерти", 215: "Линейный крейсер",
+
+     401: "Ракетная установка", 402: "Лёгкий лазер", 403: "Тяжёлый лазер", 404: "Пушка Гаусса", 405: "Ионное орудие", 
+     406: "Плазменное орудие", 407: "Малый щитовой купол", 408: "Большой щитовой купол", 502: "Ракета-перехватчик", 503: "Межпланетная ракета",
+
+     1: "Рудник по добыче металла", 2: "Рудник по добыче кристалла", 3: "Синтезатор дейтерия",
+     4: "Солнечная электростанция", 12: "Термоядерная электростанция", 14: "Фабрика роботов",
+     15: "Фабрика нанитов", 21: "Верфь", 22: "Хранилище металла", 23: "Хранилище кристалла", 24: "Ёмкость для дейтерия",
+     31: "Исследовательская лаборатория", 33: "Терраформер", 34: "Склад альянса",
+     41: "Лунная база", 42: "Сенсорная фаланга", 43: "Ворота", 44: "Ракетная шахта",
+
+     106: "Шпионаж", 108: "Компьютерная технология", 109: "Оружейная технология", 110: "Щитовая технология",
+     111: "Броня космических кораблей", 113: "Энергетическая технология", 114: "Гиперпространственная технология",
+     115: "Реактивный двигатель", 117: "Импульсный двигатель", 118: "Гиперпространственный двигатель",
+     120: "Лазерная технология", 121: "Ионная технология", 122: "Плазменная технология",
+     123: "Межгалактическая исследовательская сеть", 124: "Астрофизика", 199: "Гравитационная технология"
+    };
+
+// Очередь событий.
+var Queue = new Array ();
+var QueueLen = 0;
+
+function qvar (id, name) { return Queue['q'+id+'_'+name]; }    // для быстрого доступа к ассоциативному массиву.
+
+// Добавить задачу.
+function Enqueue (task)
+{
+    var p = "q"+QueueLen+"_";
+
+    Queue[p+'type'] = task['type'];
+    Queue[p+'obj'] = task['obj'];
+    Queue[p+'level'] = task['level'];
+    Queue[p+'idletime'] = task['idletime'];
+    Queue[p+'add_m'] = task['add_m'];
+    Queue[p+'add_k'] = task['add_k'];
+    Queue[p+'add_d'] = task['add_d'];
+
+    Queue[p+'t_from'] = task['t_from'];
+    Queue[p+'t_to'] = task['t_to'];
+    Queue[p+'t_amount'] = task['t_amount'];
+    Queue[p+'t_rate'] = task['t_rate'];
+
+    QueueLen++;
+}
+
+// Удалить задачу.
+function Dequeue (id)
+{
+    var temp = new Array (), p = 0;
+    var paramlist = [ "type", "obj", "level", "idletime", "add_m", "add_k", "add_d", "t_from", "t_to", "t_amount", "t_rate" ];
+    if (id >= QueueLen || id < 0) return;
+    for (i=0; i<id; i++, p++) {
+        for (var n in paramlist) temp["q"+p+"_"+paramlist[n]] = Queue["q"+i+"_"+paramlist[n]];
+    }
+    for (i=id+1; i<QueueLen; i++, p++) {
+        for (var n in paramlist) temp["q"+p+"_"+paramlist[n]] = Queue["q"+i+"_"+paramlist[n]];
+    }
+    Queue = temp; QueueLen--;
+}
+
+function php_number_format( number, decimals, dec_point, thousands_sep ) {
+    // http://kevin.vanzonneveld.net
+    var n = number, c = isNaN(decimals = Math.abs(decimals)) ? 2 : decimals;
+    var d = dec_point == undefined ? ',' : dec_point;
+    var t = thousands_sep == undefined ? '.' : thousands_sep, s = n < 0 ? '-' : '';
+    var i = parseInt(n = Math.abs(+n || 0).toFixed(c)) + '', j = (j = i.length) > 3 ? j % 3 : 0;
+    return s + (j ? i.substr(0, j) + t : '') + i.substr(j).replace(/(\d{3})(?=\d)/g, '$1' + t) + (c ? d + Math.abs(n - i).toFixed(c).slice(2) : '');
+}
+
+function php_strpos (haystack, needle, offset) {
+    // http://kevin.vanzonneveld.net
+    var i = (haystack+'').indexOf(needle, (offset || 0));
+    return i === -1 ? false : i;
+}
+
+// Nice Number.
+function nn (number)
+{
+    if (number < 0) return "<font color=red>" + php_number_format(number,0,",",".") + "</font>";
+    else return php_number_format(number,0,",",".");
+}
+
+function timfmt (n) { return (n < 10) ? "0"+n : n; }
+
+// Преобразовать количество секунд в строку вида h:mm:ss
+function TimeFormat (seconds)
+{
+    var html = "";
+    days = Math.floor(seconds / (24*3600));
+    hours = Math.floor(seconds / 3600 % 24);
+    mins = Math.floor(seconds  / 60 % 60);
+    secs = Math.floor(seconds / 1 % 60);
+    if (days) html = days+"дн. ";
+    if (hours) html += timfmt(hours) + ":";
+    html += timfmt(mins) + ":" + timfmt(secs);
+    return html;
+}
+
+function isbuilding (obj) { return (toint(obj) < 100); }
+function isfleet (obj) { return (toint(obj) >= 200 && toint(obj) < 300); }
+function isdefense (obj) { return (toint(obj) >= 400); }
+function isresearch (obj) { return (toint(obj) >= 100 && toint(obj) < 200); }
+
+// Нормализовать число.
+function toint (num)
+{
+    if ( typeof (num) == "undefined" ) num = 0;
+    if ( num == "" ) num = 0;
+    return parseInt (num);
+}
+
+// <! ------------------------------------------------------------------------------------------------ !>
+
+// Экономика OGame.
+
+var OldVer = 0;        // старая версия
+
+// Таблица стоимости 1-го уровня.
+var PriceTab = new Array ();
+for (var n in TechNames) PriceTab[n] = new Array ();
+
+// Постройки.
+PriceTab[14]['m'] = 400; PriceTab[14]['k'] = 120; PriceTab[14]['d'] = 200; PriceTab[14]['e'] = 0;
+PriceTab[15]['m'] = 1000000; PriceTab[15]['k'] = 500000; PriceTab[15]['d'] = 100000; PriceTab[15]['e'] = 0;
+PriceTab[21]['m'] = 400; PriceTab[21]['k'] = 200; PriceTab[21]['d'] = 100; PriceTab[21]['e'] = 0;
+PriceTab[22]['m'] = 2000; PriceTab[22]['k'] = 0; PriceTab[22]['d'] = 0; PriceTab[22]['e'] = 0;
+PriceTab[23]['m'] = 2000; PriceTab[23]['k'] = 1000; PriceTab[23]['d'] = 0; PriceTab[23]['e'] = 0;
+PriceTab[24]['m'] = 2000; PriceTab[24]['k'] = 2000; PriceTab[24]['d'] = 0; PriceTab[24]['e'] = 0;
+PriceTab[31]['m'] = 200; PriceTab[31]['k'] = 400; PriceTab[31]['d'] = 200; PriceTab[31]['e'] = 0;
+PriceTab[33]['m'] = 0; PriceTab[33]['k'] = 50000; PriceTab[33]['d'] = 100000; PriceTab[33]['e'] = 1000;
+PriceTab[34]['m'] = 20000; PriceTab[34]['k'] = 40000; PriceTab[34]['d'] = 0; PriceTab[34]['e'] = 0;
+PriceTab[44]['m'] = 20000; PriceTab[44]['k'] = 20000; PriceTab[44]['d'] = 1000; PriceTab[44]['e'] = 0;
+// Луна
+PriceTab[41]['m'] = 20000; PriceTab[41]['k'] = 40000; PriceTab[41]['d'] = 20000; PriceTab[41]['e'] = 0;
+PriceTab[42]['m'] = 20000; PriceTab[42]['k'] = 40000; PriceTab[42]['d'] = 20000; PriceTab[42]['e'] = 0;
+PriceTab[43]['m'] = 2000000; PriceTab[43]['k'] = 4000000; PriceTab[43]['d'] = 2000000; PriceTab[43]['e'] = 0;
+
+// Флот
+PriceTab[202]['m'] = 2000; PriceTab[202]['k'] = 2000; PriceTab[202]['d'] = 0;
+PriceTab[203]['m'] = 6000; PriceTab[203]['k'] = 6000; PriceTab[203]['d'] = 0;
+PriceTab[204]['m'] = 3000; PriceTab[204]['k'] = 1000; PriceTab[204]['d'] = 0;
+PriceTab[205]['m'] = 6000; PriceTab[205]['k'] = 4000; PriceTab[205]['d'] = 0;
+PriceTab[206]['m'] = 20000; PriceTab[206]['k'] = 7000; PriceTab[206]['d'] = 2000;
+PriceTab[207]['m'] = 45000; PriceTab[207]['k'] = 15000; PriceTab[207]['d'] = 0;
+PriceTab[208]['m'] = 10000; PriceTab[208]['k'] = 20000; PriceTab[208]['d'] = 10000;
+PriceTab[209]['m'] = 10000; PriceTab[209]['k'] = 6000; PriceTab[209]['d'] = 2000;
+PriceTab[210]['m'] = 0; PriceTab[210]['k'] = 1000; PriceTab[210]['d'] = 0;
+PriceTab[211]['m'] = 50000; PriceTab[211]['k'] = 25000; PriceTab[211]['d'] = 15000;
+PriceTab[212]['m'] = 0; PriceTab[212]['k'] = 2000; PriceTab[212]['d'] = 500;
+PriceTab[213]['m'] = 60000; PriceTab[213]['k'] = 50000; PriceTab[213]['d'] = 15000;
+PriceTab[214]['m'] = 5000000; PriceTab[214]['k'] = 4000000; PriceTab[214]['d'] =1000000;
+PriceTab[215]['m'] = 30000; PriceTab[215]['k'] = 40000; PriceTab[215]['d'] = 15000;
+
+// Оборона.
+PriceTab[401]['m'] = 2000; PriceTab[401]['k'] = 0; PriceTab[401]['d'] = 0;
+PriceTab[402]['m'] = 1500; PriceTab[402]['k'] = 500; PriceTab[402]['d'] = 0;
+PriceTab[403]['m'] = 6000; PriceTab[403]['k'] = 2000; PriceTab[403]['d'] = 0;
+PriceTab[404]['m'] = 20000; PriceTab[404]['k'] = 15000; PriceTab[404]['d'] = 2000;
+PriceTab[405]['m'] = 2000; PriceTab[405]['k'] = 6000; PriceTab[405]['d'] = 0;
+PriceTab[406]['m'] = 50000; PriceTab[406]['k'] = 50000; PriceTab[406]['d'] = 30000;
+PriceTab[407]['m'] = 10000; PriceTab[407]['k'] = 10000; PriceTab[407]['d'] = 0;
+PriceTab[408]['m'] = 50000; PriceTab[408]['k'] = 50000; PriceTab[408]['d'] = 0;
+PriceTab[502]['m'] = 8000; PriceTab[502]['k'] = 0; PriceTab[502]['d'] = 2000;
+PriceTab[503]['m'] = 12500; PriceTab[503]['k'] = 2500; PriceTab[503]['d'] = 10000;
+
+// Исследования.
+PriceTab[106]['m'] = 200; PriceTab[106]['k'] = 1000; PriceTab[106]['d'] = 200; PriceTab[106]['e'] = 0;
+PriceTab[108]['m'] = 0; PriceTab[108]['k'] = 400; PriceTab[108]['d'] = 600; PriceTab[108]['e'] = 0;
+PriceTab[109]['m'] = 800; PriceTab[109]['k'] = 200; PriceTab[109]['d'] = 0; PriceTab[109]['e'] = 0;
+PriceTab[110]['m'] = 200; PriceTab[110]['k'] = 600; PriceTab[110]['d'] = 0; PriceTab[110]['e'] = 0;
+PriceTab[111]['m'] = 1000; PriceTab[111]['k'] = 0; PriceTab[111]['d'] = 0; PriceTab[111]['e'] = 0;
+PriceTab[113]['m'] = 0; PriceTab[113]['k'] = 800; PriceTab[113]['d'] = 400; PriceTab[113]['e'] = 0;
+PriceTab[114]['m'] = 0; PriceTab[114]['k'] = 4000; PriceTab[114]['d'] = 2000; PriceTab[114]['e'] = 0;
+PriceTab[115]['m'] = 400; PriceTab[115]['k'] = 0; PriceTab[115]['d'] = 600; PriceTab[115]['e'] = 0;
+PriceTab[117]['m'] = 2000; PriceTab[117]['k'] = 4000; PriceTab[117]['d'] = 600; PriceTab[117]['e'] = 0;
+PriceTab[118]['m'] = 10000; PriceTab[118]['k'] = 20000; PriceTab[118]['d'] = 6000; PriceTab[118]['e'] = 0;
+PriceTab[120]['m'] = 200; PriceTab[120]['k'] = 100; PriceTab[120]['d'] = 0; PriceTab[120]['e'] = 0;
+PriceTab[121]['m'] = 1000; PriceTab[121]['k'] = 300; PriceTab[121]['d'] = 100; PriceTab[121]['e'] = 0;
+PriceTab[122]['m'] = 2000; PriceTab[122]['k'] = 4000; PriceTab[122]['d'] = 1000; PriceTab[122]['e'] = 0;
+PriceTab[123]['m'] = 240000; PriceTab[123]['k'] = 400000; PriceTab[123]['d'] = 160000; PriceTab[123]['e'] = 0;
+PriceTab[124]['m'] = 4000; PriceTab[124]['k'] = 8000; PriceTab[124]['d'] = 4000; PriceTab[124]['e'] = 0;
+PriceTab[199]['m'] = 0; PriceTab[199]['k'] = 0; PriceTab[199]['d'] = 0; PriceTab[199]['e'] = 300000;
+
+// Стоимость объекта. m-k-d-e: металл, кристалл, дейтерий и энергия. Функция возвращает общую стоимость в очках (1000 ед. любого ресурса = 1 очко).
+function ObjPrice (id, level, price)
+{
+    if (level == 0) {
+        price['m'] = price['k'] = price['d'] = price['e'] = 0;        
+    }
+    else if (id >= 202) {        // Флот и Оборона
+        price['m'] = PriceTab[id]['m'] * level;
+        price['k'] = PriceTab[id]['k'] * level;
+        price['d'] = PriceTab[id]['d'] * level;
+        price['e'] = 0;
+    }
+    else if (id == 1) {    // Рудник по добыче металла
+        price['m'] = Math.floor (60 * Math.pow(1.5, level-1));
+        price['k'] = Math.floor (15 * Math.pow(1.5, level-1));
+        price['d'] = price['e'] = 0;
+    }
+    else if (id == 2) {    // Рудник по добыче кристалла
+        price['m'] = Math.floor (48 * Math.pow(1.6, level-1));
+        price['k'] = Math.floor (24 * Math.pow(1.6, level-1));
+        price['d'] = price['e'] = 0;
+    }
+    else if (id == 3) {     // Синтезатор дейтерия
+        price['m'] = Math.floor (225 * Math.pow(1.5, level-1));
+        price['k'] = Math.floor (75 * Math.pow(1.5, level-1));
+        price['d'] = price['e'] = 0;
+    }
+    else if (id == 4) {    // Солнечная электростанция
+        price['m'] = Math.floor (75 * Math.pow(1.5, level-1));
+        price['k'] = Math.floor (30 * Math.pow(1.5, level-1));
+        price['d'] = price['e'] = 0;
+    }
+    else if (id == 12) {    // Термоядерная электростанция
+        price['m'] = Math.floor (900 * Math.pow(1.8, level-1));
+        price['k'] = Math.floor (360 * Math.pow(1.8, level-1));
+        price['d'] = Math.floor (180 * Math.pow(1.8, level-1));
+        price['e'] = 0;
+    }
+    else if (id == 124 && !OldVer) {    // Астрофизика
+        price['m'] = 100 * Math.floor ( 0.5 + 40 * Math.pow (1.75, level-1) );
+        price['k'] = 100 * Math.floor ( 0.5 + 80 * Math.pow (1.75, level-1) );
+        price['d'] = 100 * Math.floor ( 0.5 + 40 * Math.pow (1.75, level-1) );
+        price['e'] = 0;
+    }
+    else if (id == 199) {    // Гравитационная технология
+        price['m'] = PriceTab[id]['m'] * Math.pow(3, level-1);
+        price['k'] = PriceTab[id]['k'] * Math.pow(3, level-1);
+        price['d'] = PriceTab[id]['d'] * Math.pow(3, level-1);
+        price['e'] = PriceTab[id]['e'] * Math.pow(3, level-1);
+    }
+    else {    // Остальные Постройки и Исследования
+        price['m'] = PriceTab[id]['m'] * Math.pow(2, level-1);
+        price['k'] = PriceTab[id]['k'] * Math.pow(2, level-1);
+        price['d'] = PriceTab[id]['d'] * Math.pow(2, level-1);
+        price['e'] = PriceTab[id]['e'] * Math.pow(2, level-1);
+    }
+    price['p'] = Math.floor(price['m'] / 1000) + Math.floor(price['k'] / 1000) + Math.floor(price['d'] / 1000);
+}
+
+// Выработка
+function prod_metal (lvl, pr) { return Math.floor (30 * lvl * Math.pow (1.1, lvl) * pr); }
+function prod_crys (lvl, pr) { return Math.floor (20 * lvl * Math.pow (1.1, lvl) * pr); }
+function prod_deut (lvl, maxtemp, pr) {
+    if ( OldVer ) return Math.floor (10 * lvl * Math.pow (1.1, lvl) * pr) * (1.28 - 0.002 * maxtemp) ;
+    else return Math.floor (10 * lvl * Math.pow (1.1, lvl) * pr) * (1.44 - 0.004 * maxtemp) ;
+}
+function prod_solar (lvl, pr) { return Math.floor (20 * lvl * Math.pow (1.1, lvl) * pr); }
+function prod_fusion (lvl, energo, pr) { return Math.floor (30 * lvl * Math.pow (1.05 + energo*0.01, lvl) * pr); }
+function prod_sat (maxtemp) {
+    if ( OldVer ) return Math.min (50, Math.floor ((maxtemp / 4) + 20) );
+    else return Math.floor ((maxtemp+140)/6);
+}
+
+// Потребление
+function cons_metal (lvl) { return Math.ceil (10 * lvl * Math.pow (1.1, lvl)); }
+function cons_crys (lvl) { return Math.ceil (10 * lvl * Math.pow (1.1, lvl)); }
+function cons_deut (lvl) { return Math.ceil (20 * lvl * Math.pow (1.1, lvl)); }
+function cons_fusion (lvl, pr) { return Math.ceil (10 * lvl * Math.pow (1.1, lvl) * pr); }
+
+// Вместимость хранилищ
+function store_capacity (lvl) {
+    if ( OldVer ) return 100000 + 50000 * (Math.ceil (Math.pow (1.6, lvl) - 1));
+    else return Math.floor (2.5 * Math.pow (Math.E, 20 * lvl / 33)) * 5000;
+}
+
+// <! ------------------------------------------------------------------------------------------------ !>
+
+var GlobalObj = new Array ();    // "бегущее" состояние планеты
+
+function getlevel (obj) { return GlobalObj[obj]; }
+function getmaxtemp () { return toint (document.getElementById ('maxtemp').value) ; }
+
+// Вычислить производство на планете за период duration.
+function ProdResources (duration, m_now, k_now, d_now, geologe, engineer)
+{
+    now = new Array ();
+
+    // Энергетика.
+    mmax = store_capacity ( getlevel(22) );
+    kmax = store_capacity ( getlevel(23) );
+    dmax = store_capacity ( getlevel(24) );
+    emax = prod_solar(getlevel(4), prod[4]) * engineer  + 
+           prod_fusion(getlevel(12), getlevel(113), prod[12]) * engineer  + 
+           prod_sat(getmaxtemp()) * getlevel(212) * prod[212] * engineer ;
+
+    econs = ( cons_metal (getlevel(1)) * prod[1] + 
+              cons_crys (getlevel(2)) * prod[2] + 
+              cons_deut (getlevel(3)) * prod[3] );
+
+    e_now = Math.floor ( emax - econs );
+    factor = 1;
+    if ( e_now < 0 ) factor = Math.max (0, 1 - Math.abs (e_now) / econs);
+
+
+    // Прирост ресурсов.
+    hourly = prod_metal (getlevel(1), prod[1]) * geologe * factor * speed + 20 * speed;        // Металл
+    if ( m_now < mmax ) {
+        m_now += (hourly * duration) / 3600;
+        if ( m_now >= mmax ) m_now = mmax;
+    }
+
+    hourly = prod_crys (getlevel(2), prod[2]) * geologe * factor * speed + 10 * speed;        // Кристалл
+    if ( k_now < kmax ) {
+        k_now += (hourly * duration) / 3600;
+        if ( k_now >= kmax ) k_now = kmax;
+    }
+
+    hourly = prod_deut (getlevel(3), getmaxtemp(), prod[3]) * geologe * factor * speed;    // Дейтерий
+    hourly -= cons_fusion ( getlevel(12), prod[12] ) * speed;	// термояд
+    if ( d_now < dmax ) {
+        d_now += (hourly * duration) / 3600;
+        if ( d_now >= dmax ) d_now = dmax;
+    }
+
+    now['e'] = e_now; now['m'] = m_now; now['k'] = k_now; now['d'] = d_now; 
+    return now;
+}
+
+// Перерисовать очередь событий.
+function UpdateQueue()
+{
+    var html = "";
+    var price = new Array ();
+
+    var fleet = [ 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215 ];
+    var defense = [ 401, 402, 403, 404, 405, 406, 407, 408, 502, 503 ];
+    var buildings = [ 1, 2, 3, 4, 12, 14, 15, 21, 22, 23, 24, 31, 33, 34, 44 ];
+    var research = [ 106, 108, 109, 110, 111, 113, 114, 115, 117, 118, 120, 121, 122, 123, 124, 199 ];
+
+    html += "<table class=\"ui-widget-content ui-corner-all\" >\n";
+    html += "<tr><td>ID</td><td>Время начала</td><td>Событие</td><td>Длительность</td><td>Время окончания</td>";
+    html += "<td><img width='21' height='11' src='../images/metall_sm.gif' border='0' /> Металл</td>";
+    html += "<td><img width='21' height='11' src='../images/kristall_sm.gif' border='0' /> Кристалл</td>";
+    html += "<td><img width='21' height='11' src='../images/deuterium_sm.gif' border='0' /> Дейтерий</td>";
+    html += "<td><img width='21' height='11' src='../images/energie_sm.gif' border='0' /> Энергия</td><td></td></tr>\n";
+
+    // Загрузить начальные условия.
+    for (var i in fleet) GlobalObj[fleet[i]] = toint (document.getElementById('objedit'+fleet[i]).value);
+    for (var i in defense) GlobalObj[defense[i]] = toint (document.getElementById('objedit'+defense[i]).value);
+    for (var i in buildings) GlobalObj[buildings[i]] = toint (document.getElementById('objedit'+buildings[i]).value);
+    for (var i in research) GlobalObj[research[i]] = toint (document.getElementById('objedit'+research[i]).value);
+    GlobalObj[41] = GlobalObj[42] = GlobalObj[43] = 0;    // лунные постройки.
+
+    speed = toint (document.getElementById('unispeed').value);
+    OldVer = $("input[id='oldver']").attr ('checked') ? 1 : 0;
+    TechNames[124] = OldVer ? "Экспедиционная технология" : "Астрофизика";
+    $("nobr.objpic124").text ( OldVer ? "Экспедиционная технология" : "Астрофизика" );
+
+    // Производство сырья и энергии установить на 100%
+    prod = new Array ();
+    prod[1] = prod[2] = prod[3] = prod[4] = prod[12] = prod[212] = 1.0;
+
+    m_now = k_now = d_now = 0;
+    e_now = prod_solar (getlevel(4), prod[4]) + prod_fusion(getlevel(12), getlevel(113), prod[12]) + prod_sat(getmaxtemp()) * getlevel(212) * prod[212];
+    e_now -= cons_metal(getlevel(1)) * prod[1] + cons_crys(getlevel(2)) * prod[2] + cons_deut(getlevel(3)) * prod[3];
+
+    // Офицеры
+    engineer = geologe = technocrate = 0;
+
+    time_now = 0;
+    duration = 0;
+
+    if (QueueLen == 0) html += "<tr><td colspan=10>Нет заданий.</td></tr>";
+
+    for (var i=0; i<QueueLen; i++)
+    {
+        html += "<tr>";
+        html += "<td>"+(i+1)+"</td>";
+        html += "<td>"+TimeFormat(time_now)+"</td>";
+
+        // Обработать задание.
+        switch ( parseInt (qvar (i, 'type')) ) 
+        {
+            case 0:    // Построить здание
+                obj = qvar(i,'obj');
+                level = qvar(i,'level');
+                desc = "Построить " + TechNames[qvar(i,'obj')] + " (" + qvar(i,'level') + ")";
+                ObjPrice (obj, level, price);
+                tm = price['m']; tk = price['k']; td = price['d'];
+                duration = ( (tm + tk) / (2500 * (1 + getlevel(14))) ) * Math.pow (0.5, getlevel(15)) * 60*60;
+                duration /= speed;
+                if (duration < 1) duration = 1;
+                m_now -= tm; k_now -= tk; d_now -= td;
+                GlobalObj[obj] = level;
+                break;
+
+            case 1:    // Заказать постройку флота
+            case 2:    // Заказать постройку обороны
+                obj = qvar(i,'obj');
+                level = qvar(i,'level');
+                desc = "Добавить в очередь " + TechNames[obj] + " (" + level + ")";
+                pm = PriceTab [obj]['m']; pk = PriceTab [obj]['k']; pd = PriceTab [obj]['d']; pe = 0;
+                tm = pm * level; tk = pk * level; td = pd * level; te = 0;
+                duration = ( (tm + tk) / (2500 * (1 + getlevel(21))) ) * Math.pow (0.5, getlevel(15)) * 60*60;
+                duration /= speed;
+                if (duration < 1) duration = 1;
+                m_now -= tm; k_now -= tk; d_now -= td;
+                GlobalObj[obj] += level;
+                break;
+
+            case 3:    // Запустить исследование
+                obj = qvar(i,'obj');
+                level = qvar(i,'level');
+                desc = "Исследовать " + TechNames[qvar(i,'obj')] + " (" + qvar(i,'level') + ")";
+                ObjPrice (obj, level, price);
+                tm = price['m']; tk = price['k']; td = price['d'];
+                duration =  Math.floor ( ( (tm + tk) / (1000 * (1 + getlevel(31))) ) *60*60 ) ;
+                duration /= speed;
+                if ( time_now < technocrate) duration -= duration * 0.25;    // технократ
+                if (duration < 1) duration = 1;
+                if ( obj == 199) duration = 1;
+                m_now -= tm; k_now -= tk; d_now -= td;
+                GlobalObj[obj] = level;
+                break;
+
+            case 4:    // Ничего не делать, рассчитать прирост.
+                duration = qvar (i, 'idletime');
+                {
+                    // Разделить производство на промежутки когда заканчиваются Геолог и/или Инженер
+
+                    if ( engineer >= (time_now+duration) && geologe >= (time_now+duration) ) {    // без всех
+                        now = ProdResources ( duration, m_now, k_now, d_now, 1, 1 );
+                        e_now = now['e']; m_now = now['m']; k_now = now['k']; d_now = now['d'];
+                    }
+                    else if ( engineer >= (time_now+duration) && geologe < (time_now+duration) ) {    // c геологом
+                        delta = geologe-time_now;
+                        now = ProdResources ( delta, m_now, k_now, d_now, 1.1, 1 );
+                        now = ProdResources ( duration-delta, now['m'], now['k'], now['d'], 1, 1 );
+                        e_now = now['e']; m_now = now['m']; k_now = now['k']; d_now = now['d'];
+                    }
+                    else if ( engineer < (time_now+duration) && geologe >= (time_now+duration) ) {    // с инженером
+                        delta = engineer-time_now;
+                        now = ProdResources ( delta, m_now, k_now, d_now, 1, 1.1 );
+                        now = ProdResources ( duration-delta, now['m'], now['k'], now['d'], 1, 1 );
+                        e_now = now['e']; m_now = now['m']; k_now = now['k']; d_now = now['d'];
+                    }
+                    else if ( engineer < (time_now+duration) && geologe < (time_now+duration) ) {    // оба
+                        if ( engineer < geologe ) {    // инженер закончится раньше геолога
+                            now = ProdResources ( engineer-time_now, m_now, k_now, d_now, 1.1, 1.1 );
+                            now = ProdResources ( geologe-engineer, now['m'], now['k'], now['d'], 1.1, 1 );
+                            now = ProdResources ( (time_now+duration)-geologe, now['m'], now['k'], now['d'], 1, 1 );
+                            e_now = now['e']; m_now = now['m']; k_now = now['k']; d_now = now['d'];
+                        }
+                        else {     // геолог закончится раньше инженера
+                            now = ProdResources ( geologe-time_now, m_now, k_now, d_now, 1.1, 1.1 );
+                            now = ProdResources ( engineer-geologe, now['m'], now['k'], now['d'], 1, 1.1 );
+                            now = ProdResources ( (time_now+duration)-engineer, now['m'], now['k'], now['d'], 1, 1 );
+                            e_now = now['e']; m_now = now['m']; k_now = now['k']; d_now = now['d'];
+                        }
+                    }
+                }
+                time_now += duration;
+                desc = "Ничего не делать";
+                break;
+
+            case 5:    // Доставка ресурсов
+                desc = "Доставить ресурсы";
+                m_now += qvar(i,'add_m'); k_now += qvar(i,'add_k'); d_now += qvar(i,'add_d');
+                duration = 0;
+                break;
+
+            case 6:    // Изменить процент выработки сырья и энергии
+                obj = qvar(i,'obj');
+                level = qvar(i,'level');
+                desc = "Выработка " + TechNames[obj] + " " + level + "%";
+                prod[obj] = level / 100;
+                duration = 0;
+                break;
+
+            case 7:    // Заказать Офицера
+                obj = qvar(i,'obj');
+                level = qvar(i,'level');
+                var ofname = new Array ( "Командир", "Адмирал", "Инженер", "Геолог", "Технократ" );
+                desc = ofname[obj]+" на "+level+" дн.";
+                duration = level * 24*60*60;
+                if (obj == 2) engineer = time_now + duration;
+                else if (obj == 3) geologe = time_now + duration;
+                else if (obj == 4) technocrate = time_now + duration;
+                break;
+
+            case 8:    // Обменять ресурс у Скупщика
+                from = qvar(i,'t_from');
+                to = qvar(i,'t_to');
+                amount = qvar(i,'t_amount');
+                rate = qvar(i,'t_rate');
+                if ( from != to ) {
+                    switch (parseInt (from))
+                    {
+                        case 0:
+                            if (to == 1) k_now += amount * rate
+                            else if (to == 2) d_now += amount * rate;
+                            m_now -= amount;
+                            break;
+                        case 1:
+                            if (to == 0) m_now += amount * rate
+                            else if (to == 2) d_now += amount * rate;
+                            k_now -= amount;
+                            break;
+                        case 2:
+                            if (to == 0) m_now += amount * rate
+                            else if (to == 1) k_now += amount * rate;
+                            d_now -= amount;
+                            break;
+                    }
+                }
+                var resname = new Array ( "Металл", "Кристалл", "Дейтерий" );
+                desc = "Обменять "+resname[from]+" "+amount+" на "+resname[to]+" "+(amount*rate)+" (курс "+rate+")";
+                duration = 0;
+                break;
+        }
+
+        html += "<td>"+desc+"</td>";
+
+        html += "<td>"+TimeFormat(duration)+"</td>";
+        if (qvar (i, 'type') == 4) html += "<td>"+TimeFormat(time_now)+"</td>";
+        else html += "<td>"+TimeFormat(time_now+duration)+"</td>";
+
+        // Ресурсы.
+        html += "<td>" + nn (m_now) + "</td>";
+        html += "<td>" + nn (k_now) + "</td>";
+        html += "<td>" + nn (d_now) + "</td>";
+        html += "<td>" + nn (e_now) + "</td>";
+
+        // Кнопки.
+        html += "<td><a class=\"ui-icon ui-icon-trash\" href=\"#\" task_id=\""+i+"\" /></td>";
+
+        html += "</tr>\n";
+    }
+
+    html += "</table>\n";
+
+    document.getElementById ('queue').innerHTML = html;
+
+    // Обработчики кнопок.
+    jQuery.each ($("a[class*=ui-icon-trash]"), function () {
+        $(this).wTooltip({content: "Удалить" })
+        $(this).click ( function() { 
+            Dequeue ( parseInt ($(this).attr("task_id"))  );
+            // Сохранить очередь в кукисах.
+            createCookie ("spec_queue", EncodeQueue(), 9999 );
+            UpdateQueue ();
+        })
+    });
+
+    $("#sortable").sortable ();
+    $("#sortable").disableSelection ();
+}
+
+function onObjChange (id)
+{
+    id = toint (document.getElementById ('task_obj').value);
+    document.getElementById ('task_level').value = toint (GlobalObj[id]) + 1;
+}
+
+function getList (list)
+{
+    var html = "<select id=\"task_obj\" onchange=\"onObjChange();\" >";
+    for (var i in list) {
+        html += "<option value=\""+list[i]+"\" >"+TechNames[list[i]]+"</option>";
+    }
+    html += "</select>";
+    return html;
+}
+
+function getPercentList ()
+{
+    var list = [ 100, 90, 80, 70, 60, 50, 40, 30, 20, 10, 0 ];
+    var html = "<select id=\"task_prod\">";
+    for (var i in list) {
+        html += "<option value=\""+(list[i])+"\">"+(list[i]+"%")+"</option>";
+    }
+    html += "</select>";
+    return html;
+}
+
+function getOfficerList ()
+{
+    var ofname = new Array ( "Командир", "Адмирал", "Инженер", "Геолог", "Технократ" );
+    var list = [ 2, 3, 4 ];
+    var html = "<select id=\"task_obj\">";
+    for (var i in list) {
+        html += "<option value=\""+list[i]+"\" ";
+        html += ">"+ofname[list[i]]+"</option>";
+    }
+    html += "</select>";
+    return html;
+}
+
+function getMKDList (name, selected)
+{
+    var resname = new Array ( "Металл", "Кристалл", "Дейтерий" );
+    var list = [ 0, 1, 2 ];
+    var html = "<select id=\""+name+"\">";
+    for (var i in list) {
+        html += "<option value=\""+list[i]+"\" ";
+        if ( i == selected) html += "selected ";
+        html += ">"+resname[list[i]]+"</option>";
+    }
+    html += "</select>";
+    return html;
+}
+
+function ChangeTaskType ()
+{
+    var type = document.getElementById ('task_type').value;
+    var html = "";
+
+    html += "<table >\n";
+    switch ( parseInt(type) )
+    {
+        case 0:    // Построить здание
+            html += "<tr><td>Строить: </td><td> "+getList([ 1, 2, 3, 4, 12, 14, 15, 21, 22, 23, 24, 31, 33, 34, 44, 41, 42, 43 ])+"</td></tr>\n";
+            html += "<tr><td>Уровень: </td><td> <input value=\"1\" size=\"7\" id=\"task_level\"></td></tr>\n";
+            break;
+
+        case 1:    // Заказать постройку флота
+            html += "<tr><td>Тип: </td><td> "+getList([ 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215 ])+"</td></tr>\n";
+            html += "<tr><td>Количество: </td><td> <input value=\"1\" size=\"7\" id=\"task_level\"></td></tr>\n";
+            break;
+
+        case 2:    // Заказать постройку обороны
+            html += "<tr><td>Тип: </td><td> "+getList([ 401, 402, 403, 404, 405, 406, 407, 408, 502, 503 ])+"</td></tr>\n";
+            html += "<tr><td>Количество: </td><td> <input value=\"1\" size=\"7\" id=\"task_level\"></td></tr>\n";
+            break;
+
+        case 3:    // Запустить исследование
+            html += "<tr><td>Исследовать: </td><td> "+getList([ 106, 108, 109, 110, 111, 113, 114, 115, 117, 118, 120, 121, 122, 123, 124, 199 ])+"</td></tr>\n";
+            html += "<tr><td>Уровень: </td><td><input value=\"1\" size=\"7\" id=\"task_level\"></td></tr>\n";
+            break;
+
+        case 4:    // Ничего не делать
+            html += "<tr><td>Дней: </td><td><input value=\"0\" size=\"7\" id=\"task_days\"></td></tr>\n";
+            html += "<tr><td>Часов: </td><td><input value=\"0\" size=\"7\" id=\"task_hours\"></td></tr>\n";
+            html += "<tr><td>Минут: </td><td><input value=\"0\" size=\"7\" id=\"task_minutes\"></td></tr>\n";
+            html += "<tr><td>Секунд: </td><td><input value=\"0\" size=\"7\" id=\"task_seconds\"></td></tr>\n";
+            break;
+
+        case 5:    // Доставка ресурсов
+            html += "<tr><td>Металла: </td><td><input value=\"0\" size=\"7\" id=\"task_m\"></td></tr>\n";
+            html += "<tr><td>Кристалла: </td><td><input value=\"0\" size=\"7\" id=\"task_k\"></td></tr>\n";
+            html += "<tr><td>Дейтерия: </td><td><input value=\"0\" size=\"7\" id=\"task_d\"></td></tr>\n";
+            break;
+
+        case 6:    // Изменить процент выработки сырья и энергии
+            html += "<tr><td>Постройка: </td><td>"+getList([ 1, 2, 3, 4, 12, 212 ])+"</td></tr>\n";
+            html += "<tr><td>Процент: </td><td>"+getPercentList()+"</td></tr>\n";
+            break;
+
+        case 7:    // Заказать Офицера
+            html += "<tr><td>Офицер: </td><td>"+getOfficerList()+"</td></tr>\n";
+            html += "<tr><td>Дней: </td><td><input value=\"7\" size=\"7\" id=\"task_days\"></td></tr>\n";
+            break;
+
+        case 8:    // Обменять ресурс у Скупщика
+            html += "<tr><td>Обменять: </td><td>"+getMKDList("task_from", 0)+"</td></tr>\n";
+            html += "<tr><td>На: </td><td>"+getMKDList("task_to", 1)+"</td></tr>\n";
+            html += "<tr><td>Количество: </td><td><input value=\"0\" size=\"7\" id=\"task_amount\"></td></tr>\n";
+            html += "<tr><td>Курс: </td><td><input value=\"0\" size=\"7\" id=\"task_rate\"></td></tr>\n";
+            break;
+    }
+    html += "<tr><td ><a href=\"#\" id=\"addbutton\" class=\"fg-button ui-state-default ui-corner-all\">Добавить</a></td></tr>\n";
+    html += "</table>\n";
+
+    document.getElementById ('taskedit').innerHTML = html;
+    $("#addbutton").click ( function() { AddTask (); });
+}
+
+function AddTask ()
+{
+    var type = document.getElementById ('task_type').value;
+    var task = new Array ();
+
+    task['type'] = type;
+
+    switch ( parseInt(type) )
+    {
+        case 0:    // Построить здание
+        case 1:    // Заказать постройку флота
+        case 2:    // Заказать постройку обороны
+        case 3:    // Запустить исследование
+            task['obj'] = Math.max (0, toint (document.getElementById ('task_obj').value));
+            task['level'] = Math.max (0, toint (document.getElementById ('task_level').value));
+            document.getElementById ('task_level').value ++;
+            break;
+
+        case 4:    // Ничего не делать
+            d = Math.max (0, toint (document.getElementById ('task_days').value));
+            h = Math.max (0, toint (document.getElementById ('task_hours').value));
+            m = Math.max (0, toint (document.getElementById ('task_minutes').value));
+            s = Math.max (0, toint (document.getElementById ('task_seconds').value));
+            if (h >= 24) h = 23;
+            if (m >= 60) h = 59;
+            if (s >= 60) s = 59;
+            task['idletime'] = 60*60*24*d + 60*60*h + 60*m + s;
+            break;
+
+        case 5:    // Доставка ресурсов
+            task['add_m'] = toint (document.getElementById ('task_m').value);
+            task['add_k'] = toint (document.getElementById ('task_k').value);
+            task['add_d'] = toint (document.getElementById ('task_d').value);
+            break;
+
+        case 6:    // Изменить процент выработки сырья и энергии
+            task['obj'] = Math.max (0, toint (document.getElementById ('task_obj').value));
+            task['level'] = Math.max (0, toint (document.getElementById ('task_prod').value));
+            break;
+
+        case 7:    // Заказать Офицера
+            task['obj'] = Math.max (0, toint (document.getElementById ('task_obj').value));
+            task['level'] = Math.max (0, toint (document.getElementById ('task_days').value));
+            break;
+
+        case 8:    // Обменять ресурс у Скупщика
+            task['t_from'] = Math.max (0, toint (document.getElementById ('task_from').value));
+            task['t_to'] = Math.max (0, toint (document.getElementById ('task_to').value));
+            task['t_amount'] = Math.max (0, toint (document.getElementById ('task_amount').value));
+            task['t_rate'] = Math.max (0, toint (document.getElementById ('task_rate').value));
+            break;
+    }
+
+    Enqueue ( task );
+
+    // Добавить задание "Ничего не делать" для строительных заданий.
+    if ( type < 4 )
+    {
+        var price = new Array ();
+        task['type'] = 4;
+        obj = task['obj'];
+        level = task['level'];
+        duration = 0;
+
+        switch ( parseInt(type) )
+        {
+            case 0:    // Построить здание
+                ObjPrice (obj, level, price);
+                tm = price['m']; tk = price['k']; td = price['d'];
+                duration = ( (tm + tk) / (2500 * (1 + getlevel(14))) ) * Math.pow (0.5, getlevel(15)) * 60*60;
+                duration /= speed;
+                if (duration < 1) duration = 1;
+                break;
+
+            case 1:    // Заказать постройку флота
+            case 2:    // Заказать постройку обороны
+                pm = PriceTab [obj]['m']; pk = PriceTab [obj]['k']; pd = PriceTab [obj]['d']; pe = 0;
+                tm = pm * level; tk = pk * level; td = pd * level; te = 0;
+                duration = ( (tm + tk) / (2500 * (1 + getlevel(21))) ) * Math.pow (0.5, getlevel(15)) * 60*60;
+                duration /= speed;
+                if (duration < 1) duration = 1;
+                break;
+
+            case 3:    // Запустить исследование
+                ObjPrice (obj, level, price);
+                tm = price['m']; tk = price['k']; td = price['d'];
+                duration =  Math.floor ( ( (tm + tk) / (1000 * (1 + getlevel(31))) ) *60*60 ) ;
+                duration /= speed;
+                if ( time_now < technocrate) duration -= duration * 0.25;    // технократ
+                if (duration < 1) duration = 1;
+                if ( obj == 199) duration = 1;
+                break;
+        }
+
+        task['idletime'] = duration;
+        Enqueue (task);
+    }
+
+    // Сохранить очередь в кукисах.
+    createCookie ("spec_queue", EncodeQueue(), 9999 );
+    UpdateQueue ();
+}
+
+// 5(500,500,0)0(1,1)4(107)0(2,1)4(103)0(4,1)4(151)
+
+function DecodeQueue (text)
+{
+    var task = new Array ();
+
+    Queue = {};
+    QueueLen = 0;
+
+    while (1) {
+
+        s = php_strpos ( text, '(' );
+        e = php_strpos ( text, ')' );
+        if ( s > 0 && e > 0 ) {
+            type = text.substr ( 0, s );
+            param = text.substr (s+1, e-2);
+            p = param.split (',');
+
+            task['type'] = type;
+            switch ( parseInt(type) )
+            {
+                case 0:    // Построить здание
+                case 1:    // Заказать постройку флота
+                case 2:    // Заказать постройку обороны
+                case 3:    // Запустить исследование
+                case 6:    // Изменить процент выработки сырья и энергии
+                case 7:    // Заказать Офицера
+                    task['obj'] = Math.max (0, toint (p[0]));
+                    task['level'] = Math.max (0, toint (p[1]));
+                    break;
+                case 4:    // Ничего не делать
+                    task['idletime'] = toint (p[0]);
+                    break;
+                case 5:    // Доставка ресурсов
+                    task['add_m'] = toint (p[0]);
+                    task['add_k'] = toint (p[1]);
+                    task['add_d'] = toint (p[2]);
+                    break;
+                case 8:    // Обменять ресурс у Скупщика
+                    task['t_from'] = Math.max (0, toint (p[0]));
+                    task['t_to'] = Math.max (0, toint (p[1]));
+                    task['t_amount'] = Math.max (0, toint (p[2]));
+                    task['t_rate'] = Math.max (0, toint (p[3]));
+                    break;
+            }
+            Enqueue ( task );
+        }
+        else break;
+
+        text = text.substr ( e+1 );
+    }
+}
+
+function LoadQueue ()
+{
+    DecodeQueue ( document.getElementById('queueLoadText').value );
+    UpdateQueue ();
+    $(this).dialog('close');
+}
+
+function LoadQueueDialog ()
+{
+    $("#dialogLoad").dialog('open');
+}
+
+function EncodeQueue ()
+{
+    var text = "";
+
+    for (var i=0; i<QueueLen; i++)
+    {
+        switch ( parseInt (qvar (i, 'type')) ) 
+        {
+            case 0:    // Построить здание
+            case 1:    // Заказать постройку флота
+            case 2:    // Заказать постройку обороны
+            case 3:    // Запустить исследование
+            case 6:    // Изменить процент выработки сырья и энергии
+            case 7:    // Заказать Офицера
+                text += toint(qvar (i, 'type')) + "(" + toint(qvar(i,'obj')) + "," + toint(qvar(i,'level')) + ")";
+                break;
+            case 4:    // Ничего не делать, рассчитать прирост.
+                text += "4(" + toint(qvar (i, 'idletime')) + ")";
+                break;
+            case 5:    // Доставка ресурсов
+                text += "5(" + toint(qvar(i,'add_m')) + "," + toint(qvar(i,'add_k')) + "," + toint(qvar(i,'add_d')) + ")";
+                break;
+            case 8:    // Обменять ресурс у Скупщика
+                text += "5(" + toint(qvar(i,'t_from')) + "," + toint(qvar(i,'t_to')) + "," + toint(qvar(i,'t_amount')) + "," + toint(qvar(i,'t_rate')) + ")";
+                break;
+        }
+    }
+
+    return text;
+}
+
+function SaveQueueDialog ()
+{
+    $("#queueSaveText").html ( EncodeQueue () );
+    $("#dialogSave").dialog('open');
+}
+
+function ResetQueue ()
+{
+    Queue = {};
+    QueueLen = 0;
+    // Сохранить очередь в кукисах.
+    createCookie ("spec_queue", EncodeQueue(), 9999 );
+    UpdateQueue ();
+}
+
+function InitPlanetDialog ()
+{
+    $("#dialogPlanet").dialog('open');
+}
+
+// Инициализация программы.
+function BuildconStart ()
+{
+    var text = readCookie ("spec_queue");
+    if ( text == null )
+    {
+        task = new Array ();
+        task['type'] = 5;
+        task['add_m'] = task['add_k'] = 500;
+        Enqueue ( task );
+    }
+    else DecodeQueue ( text );
+
+    ChangeTaskType (0);
+    UpdateQueue ();
+
+    $("#loadqueue").click ( function() { LoadQueueDialog (); });
+    $("#savequeue").click ( function() { SaveQueueDialog (); });
+    $("#resetqueue").click ( function() { ResetQueue (); });
+    $("#initplanet").click ( function() { InitPlanetDialog (); });
+
+    $("#dialogLoad").dialog({   
+        bgiframe: true, modal: true, minHeight: 260, width: 610, zIndex: 3, 
+        autoOpen: false,
+        open: function() { $("#dialogLoad").html ( "<center><table class=\"ui-widget-content ui-corner-all\" width=\"100%\"><tr><td><textarea cols='100' rows='15' id=\"queueLoadText\"></textarea></td></tr></table></center>" ); },
+        buttons: { "Ok": LoadQueue }   
+    });
+    $("#dialogSave").dialog({   
+        bgiframe: true, modal: true, minHeight: 260, width: 610, zIndex: 3, 
+        autoOpen: false
+    });
+    $("#dialogPlanet").dialog({   
+        bgiframe: true, modal: true, minHeight: 400, width: 900, zIndex: 3, 
+        autoOpen: false
+    });
+
+    $("#maxtemptip").wTooltip({content: "Минимальная темпераутура = Максимальная температура - 40°C" })
+}
+
+</script>
+
+<div class="ui-widget-content">
+
+<! ---------------------------------------------------------------------------------------------- !>
+
+<h3>Начальные условия</h3>
+
+<table>
+<tr>
+
+<td style="vertical-align: top;">
+
+<table class="ui-widget-content ui-corner-all">
+
+<tr>
+<td>
+<a href="#" id="initplanet" class="fg-button fg-button-icon-left ui-state-default ui-corner-all"><span class="ui-icon ui-icon-lightbulb"></span>Начальное состояние планеты</a>
+</td></tr>
+
+
+<tr><td>
+<table>
+<tr><td id="maxtemptip">Макс. температура</td><td><input value="+50" size="2" id="maxtemp"></td></tr>
+<tr><td>Старый дизайн</td><td><input id="oldver" type="checkbox" onchange="UpdateQueue();"></td></tr>
+<tr><td>Ускорение вселенной</td><td>
+<select id="unispeed" onchange="UpdateQueue();">
+<option value="1">x1</option>
+<option value="2">x2</option>
+<option value="3">x3</option>
+<option value="4">x4</option>
+<option value="5">x5</option>
+<option value="6">x6</option>
+<option value="7">x7</option>
+<option value="8">x8</option>
+</select></td></tr>
+</table>
+</td></tr>
+
+</table>
+
+</td>
+
+<td style="vertical-align: top;">
+<table><tr><td>
+<h3>Небольшая справка</h3>
+• Окно программы поделено на две части: <i>Начальные условия</i> и <i>Очередь событий</i><br/>
+• Начальные условия отображают состояние планеты на момент начала очереди. Тут вы можете указать всё необходимое: постройки, флот, оборону, исследования и максимальную температуру. Проще говоря Начальные условия отражают состояние планеты в момент времени 0.<br/>
+• В Очереди событий находятся задания в таком порядке, в котором вы их добавили из панели заданий. Каждое задание имеет номер, длительность, дату начала и окончания, описание. Дополнительно отображается количество ресурсов, которые будут находиться на планете после завершения задания.<br/>
+• Программа <b>НЕ</b> производит никаких проверок при обработке очереди. Ресурсы всегда списываются и могут уходить в минус, порядок исследований может не соответствовать требованиям для их запуска и прочее. За правильностью очереди должен следить сам пользователь.<br/>
+</td></tr></table>
+</td>
+
+</tr>
+</table>
+
+
+<! ---------------------------------------------------------------------------------------------- !>
+
+<style type="text/css">
+    #sortable { list-style-type: none; margin: 0; padding: 0; width: auto; }
+    #sortable li:hover { cursor: pointer; }
+</style>
+
+<h3>Очередь событий</h3>
+
+<table>
+<tr>
+
+<td style="vertical-align: top;">
+<div id="queue">
+...
+</div>
+</td>
+
+<td style="vertical-align: bottom;">
+<table class="ui-widget-content ui-corner-all">
+<tr><td>Панель задач</td></tr>
+<tr><td>
+Выберите: <select id="task_type" onchange="ChangeTaskType();">
+<option value="0">Построить здание</option>
+<option value="1">Заказать постройку флота</option>
+<option value="2">Заказать постройку обороны</option>
+<option value="3">Запустить исследование</option>
+<option value="4">Ничего не делать</option>
+<option value="5">Доставка ресурсов</option>
+<option value="6">Изменить процент выработки сырья и энергии</option>
+<option value="7">Заказать Офицера</option>
+<option value="8">Обменять ресурс у Скупщика</option>
+</select></td></tr>
+<tr><td>
+<div id="taskedit">
+...
+</div>
+</td></tr>
+</table>
+</td>
+
+</tr>
+</table>
+
+<table>
+<tr><td>
+    <a href="#" id="loadqueue" class="fg-button fg-button-icon-left ui-state-default ui-corner-all"><span class="ui-icon ui-icon-cart"></span>Загрузить очередь</a>
+    <a href="#" id="savequeue" class="fg-button fg-button-icon-left ui-state-default ui-corner-all"><span class="ui-icon ui-icon-disk"></span>Сохранить очередь</a>
+    <a href="#" id="resetqueue" class="fg-button fg-button-icon-left ui-state-default ui-corner-all"><span class="ui-icon ui-icon-document"></span>Сбросить очередь</a>
+</td></tr>
+</table>
+
+</div>
+
+<! ----------------- Диалог Начальное состояние планеты. ----------------- !>
+
+<div id="dialogPlanet" title="Начальное состояние планеты" style="display: none;">
+<table class="ui-widget-content ui-corner-all" cellpadding="0" cellspacing="0" width="100%">
+<tbody><tr>     <th><div align="left">Постройки</div></th> <th><div align="left">Флот</div></th> <th><div align="left">Оборона</div></th> <th><div align="left">Исследования</div></th></tr><tr><td><table width="190px"><tbody><tr><td><nobr  class="objpic1">Рудник по добыче металла</nobr></td><td align="right"><input tabindex="1" value="0" size="2" id="objedit1" class="centered"></td></tr></tbody></table></td><td><table width="180px"><tbody><tr><td><nobr  class="objpic202">Малый транспорт</nobr></td><td align="right"><input tabindex="102" value="0" size="6" id="objedit202" class="centered"></td></tr></tbody></table></td><td><table width="180px"><tbody><tr><td><nobr  class="objpic401">Ракетная установка</nobr></td><td align="right"><input tabindex="201" value="0" size="6" id="objedit401" class="centered"></td></tr></tbody></table></td><td><table width="190px"><tbody><tr><td><nobr  class="objpic106">Шпионаж</nobr></td><td align="right"><input tabindex="506" value="0" size="2" id="objedit106" class="centered"></td></tr></tbody></table></td></tr><tr><td><table width="190px"><tbody><tr><td><nobr  class="objpic2">Рудник по добыче крист.</nobr></td><td align="right"><input tabindex="2" value="0" size="2" id="objedit2" class="centered"></td></tr></tbody></table></td><td><table width="180px"><tbody><tr><td><nobr  class="objpic203">Большой транспорт</nobr></td><td align="right"><input tabindex="103" value="0" size="6" id="objedit203" class="centered"></td></tr></tbody></table></td><td><table width="180px"><tbody><tr><td><nobr  class="objpic402">Лёгкий лазер</nobr></td><td align="right"><input tabindex="202" value="0" size="6" id="objedit402" class="centered"></td></tr></tbody></table></td><td><table width="190px"><tbody><tr><td><nobr  class="objpic108">Компьютерная технология</nobr></td><td align="right"><input tabindex="508" value="0" size="2" id="objedit108" class="centered"></td></tr></tbody></table></td></tr><tr><td><table width="190px"><tbody><tr><td><nobr  class="objpic3">Синтезатор дейтерия</nobr></td><td align="right"><input tabindex="3" value="0" size="2" id="objedit3" class="centered"></td></tr></tbody></table></td><td><table width="180px"><tbody><tr><td><nobr  class="objpic204">Лёгкий истребитель</nobr></td><td align="right"><input tabindex="104" value="0" size="6" id="objedit204" class="centered"></td></tr></tbody></table></td><td><table width="180px"><tbody><tr><td><nobr  class="objpic403">Тяжёлый лазер</nobr></td><td align="right"><input tabindex="203" value="0" size="6" id="objedit403" class="centered"></td></tr></tbody></table></td><td><table width="190px"><tbody><tr><td><nobr  class="objpic109">Оружейная технология</nobr></td><td align="right"><input tabindex="509" value="0" size="2" id="objedit109" class="centered"></td></tr></tbody></table></td></tr><tr><td><table width="190px"><tbody><tr><td><nobr  class="objpic4">Солнечная электростанция</nobr></td><td align="right"><input tabindex="4" value="0" size="2" id="objedit4" class="centered"></td></tr></tbody></table></td><td><table width="180px"><tbody><tr><td><nobr  class="objpic205">Тяжёлый истреб.</nobr></td><td align="right"><input tabindex="105" value="0" size="6" id="objedit205" class="centered"></td></tr></tbody></table></td><td><table width="180px"><tbody><tr><td><nobr  class="objpic404">Пушка Гаусса</nobr></td><td align="right"><input tabindex="204" value="0" size="6" id="objedit404" class="centered"></td></tr></tbody></table></td><td><table width="190px"><tbody><tr><td><nobr  class="objpic110">Щитовая технология</nobr></td><td align="right"><input tabindex="510" value="0" size="2" id="objedit110" class="centered"></td></tr></tbody></table></td></tr><tr><td><table width="190px"><tbody><tr><td><nobr  class="objpic12">Термоядерная электрост.</nobr></td><td align="right"><input tabindex="12" value="0" size="2" id="objedit12" class="centered"></td></tr></tbody></table></td><td><table width="180px"><tbody><tr><td><nobr  class="objpic206">Крейсер</nobr></td><td align="right"><input tabindex="106" value="0" size="6" id="objedit206" class="centered"></td></tr></tbody></table></td><td><table width="180px"><tbody><tr><td><nobr  class="objpic405">Ионное орудие</nobr></td><td align="right"><input tabindex="205" value="0" size="6" id="objedit405" class="centered"></td></tr></tbody></table></td><td><table width="190px"><tbody><tr><td><nobr  class="objpic111">Броня космич. кораблей</nobr></td><td align="right"><input tabindex="511" value="0" size="2" id="objedit111" class="centered"></td></tr></tbody></table></td></tr><tr><td><table width="190px"><tbody><tr><td><nobr  class="objpic14">Фабрика роботов</nobr></td><td align="right"><input tabindex="14" value="0" size="2" id="objedit14" class="centered"></td></tr></tbody></table></td><td><table width="180px"><tbody><tr><td><nobr  class="objpic207">Линкор</nobr></td><td align="right"><input tabindex="107" value="0" size="6" id="objedit207" class="centered"></td></tr></tbody></table></td><td><table width="180px"><tbody><tr><td><nobr  class="objpic406">Плазменное орудие</nobr></td><td align="right"><input tabindex="206" value="0" size="6" id="objedit406" class="centered"></td></tr></tbody></table></td><td><table width="190px"><tbody><tr><td><nobr  class="objpic113">Энергетическая техн.</nobr></td><td align="right"><input tabindex="513" value="0" size="2" id="objedit113" class="centered"></td></tr></tbody></table></td></tr><tr><td><table width="190px"><tbody><tr><td><nobr  class="objpic15">Фабрика нанитов</nobr></td><td align="right"><input tabindex="15" value="0" size="2" id="objedit15" class="centered"></td></tr></tbody></table></td><td><table width="180px"><tbody><tr><td><nobr  class="objpic208">Колонизатор</nobr></td><td align="right"><input tabindex="108" value="0" size="6" id="objedit208" class="centered"></td></tr></tbody></table></td><td><table width="180px"><tbody><tr><td><nobr  class="objpic407">Малый щитовой куп.</nobr></td><td align="right"><input tabindex="207" value="0" size="6" id="objedit407" class="centered"></td></tr></tbody></table></td><td><table width="190px"><tbody><tr><td><nobr  class="objpic114">Гиперпространственная т.</nobr></td><td align="right"><input tabindex="514" value="0" size="2" id="objedit114" class="centered"></td></tr></tbody></table></td></tr><tr><td><table width="190px"><tbody><tr><td><nobr  class="objpic21">Верфь</nobr></td><td align="right"><input tabindex="21" value="0" size="2" id="objedit21" class="centered"></td></tr></tbody></table></td><td><table width="180px"><tbody><tr><td><nobr  class="objpic209">Переработчик</nobr></td><td align="right"><input tabindex="109" value="0" size="6" id="objedit209" class="centered"></td></tr></tbody></table></td><td><table width="180px"><tbody><tr><td><nobr  class="objpic408">Большой щитов. куп.</nobr></td><td align="right"><input tabindex="208" value="0" size="6" id="objedit408" class="centered"></td></tr></tbody></table></td><td><table width="190px"><tbody><tr><td><nobr  class="objpic115">Реактивный двигатель</nobr></td><td align="right"><input tabindex="515" value="0" size="2" id="objedit115" class="centered"></td></tr></tbody></table></td></tr><tr><td><table width="190px"><tbody><tr><td><nobr  class="objpic22">Хранилище металла</nobr></td><td align="right"><input tabindex="22" value="0" size="2" id="objedit22" class="centered"></td></tr></tbody></table></td><td><table width="180px"><tbody><tr><td><nobr  class="objpic210">Шпионский зонд</nobr></td><td align="right"><input tabindex="110" value="0" size="6" id="objedit210" class="centered"></td></tr></tbody></table></td><td><table width="180px"><tbody><tr><td><nobr  class="objpic502">Ракета-перехватчик</nobr></td><td align="right"><input tabindex="302" value="0" size="6" id="objedit502" class="centered"></td></tr></tbody></table></td><td><table width="190px"><tbody><tr><td><nobr  class="objpic117">Импульсный двигатель</nobr></td><td align="right"><input tabindex="517" value="0" size="2" id="objedit117" class="centered"></td></tr></tbody></table></td></tr><tr><td><table width="190px"><tbody><tr><td><nobr  class="objpic23">Хранилище кристалла</nobr></td><td align="right"><input tabindex="23" value="0" 
+size="2" id="objedit23" class="centered"></td></tr></tbody></table></td><td><table width="180px"><tbody><tr><td><nobr  class="objpic211">Бомбардировщик</nobr></td><td align="right"><input tabindex="111" value="0" size="6" id="objedit211" class="centered"></td></tr></tbody></table></td><td><table width="180px"><tbody><tr><td><nobr  class="objpic503">Межпланетн. ракета</nobr></td><td align="right"><input tabindex="303" value="0" size="6" id="objedit503" class="centered"></td></tr></tbody></table></td><td><table width="190px"><tbody><tr><td><nobr  class="objpic118">Гиперпространственный д.</nobr></td><td align="right"><input tabindex="518" value="0" size="2" id="objedit118" class="centered"></td></tr></tbody></table></td></tr><tr><td><table width="190px"><tbody><tr><td><nobr  class="objpic24">Ёмкость для дейтерия</nobr></td><td align="right"><input tabindex="24" value="0" size="2" id="objedit24" class="centered"></td></tr></tbody></table></td><td><table width="180px"><tbody><tr><td><nobr  class="objpic212">Солнечный спутник</nobr></td><td align="right"><input tabindex="112" value="0" size="6" id="objedit212" class="centered"></td></tr></tbody></table></td><td>&nbsp;</td><td><table width="190px"><tbody><tr><td><nobr  class="objpic120">Лазерная технология</nobr></td><td align="right"><input tabindex="520" value="0" size="2" id="objedit120" class="centered"></td></tr></tbody></table></td></tr><tr><td><table width="190px"><tbody><tr><td><nobr  class="objpic31">Исследовательская лаб.</nobr></td><td align="right"><input tabindex="31" value="0" size="2" id="objedit31" class="centered"></td></tr></tbody></table></td><td><table width="180px"><tbody><tr><td><nobr  class="objpic213">Уничтожитель</nobr></td><td align="right"><input tabindex="113" value="0" size="6" id="objedit213" class="centered"></td></tr></tbody></table></td><td>&nbsp;</td><td><table width="190px"><tbody><tr><td><nobr  class="objpic121">Ионная технология</nobr></td><td align="right"><input tabindex="521" value="0" size="2" id="objedit121" class="centered"></td></tr></tbody></table></td></tr><tr><td><table width="190px"><tbody><tr><td><nobr  class="objpic33">Терраформер</nobr></td><td align="right"><input tabindex="33" value="0" size="2" id="objedit33" class="centered"></td></tr></tbody></table></td><td><table width="180px"><tbody><tr><td><nobr  class="objpic214">Звезда смерти</nobr></td><td align="right"><input tabindex="114" value="0" size="6" id="objedit214" class="centered"></td></tr></tbody></table></td><td>&nbsp;</td><td><table width="190px"><tbody><tr><td><nobr  class="objpic122">Плазменная технология</nobr></td><td align="right"><input tabindex="522" value="0" size="2" id="objedit122" class="centered"></td></tr></tbody></table></td></tr><tr><td><table width="190px"><tbody><tr><td><nobr  class="objpic34">Склад альянса</nobr></td><td align="right"><input tabindex="34" value="0" size="2" id="objedit34" class="centered"></td></tr></tbody></table></td><td><table width="180px"><tbody><tr><td><nobr  class="objpic215">Линейный крейсер</nobr></td><td align="right"><input tabindex="115" value="0" size="6" id="objedit215" class="centered"></td></tr></tbody></table></td><td>&nbsp;</td><td><table width="190px"><tbody><tr><td><nobr  class="objpic123">Межгалактич. иссл. сеть</nobr></td><td align="right"><input tabindex="523" value="0" size="2" id="objedit123" class="centered"></td></tr></tbody></table></td></tr><tr><td><table width="190px"><tbody><tr><td><nobr  class="objpic44">Ракетная шахта</nobr></td><td align="right"><input tabindex="44" value="0" size="2" id="objedit44" class="centered"></td></tr></tbody></table></td><td>&nbsp;</td><td>&nbsp;</td><td><table width="190px"><tbody><tr><td><nobr  class="objpic124">Астрофизика</nobr></td><td align="right"><input tabindex="524" value="0" size="2" id="objedit124" class="centered"></td></tr></tbody></table></td></tr><tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td><table width="190px"><tbody><tr><td><nobr class="objpic199">Гравитационная техн.</nobr></td><td align="right"><input tabindex="599" value="0" size="2" id="objedit199" class="centered"></td></tr></tbody></table></td></tr></tbody>
+</table>
+</div>
+
+<! ----------------- Диалог Загрузить. ----------------- !>
+
+<div id="dialogLoad" title="Загрузить очередь" style="display: none;">
+<! ----------------- охохохо ебанутая опера http://www.linkexchanger.su/forum/viewtopic.php?f=3&t=605 ----------------- !>
+</div>
+
+<! ----------------- Диалог Сохранить. ----------------- !>
+
+<div id="dialogSave" title="Сохранить очередь" style="display: none;">
+<center><table class="ui-widget-content ui-corner-all" width="100%">
+<tr><td>
+<div id="queueSaveText"></div>
+</td></tr>
+</table></center>
+</div>
+
+</body>
+
+</html>

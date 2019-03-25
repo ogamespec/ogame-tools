@@ -1,0 +1,1767 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="keywords" content="Империя OGame, OGame Empire Tool" />
+    <meta name="description" content="Империя - утилита для расчета стоимости и производства построек, флота, обороны и исследований для браузерной игры OGame" />
+    <meta name="author" content="Andorianin" />
+    <title>Империя</title>
+    <link type="text/css" href="css/com.css" rel="stylesheet" /> 
+    <script type="text/javascript" src="jquery/jquery-1.8.3.min.js"></script>
+    <script type="text/javascript" src="jquery/wtooltip.min.js"></script> 
+    <script type="text/javascript" src="jquery/ui/ui.core.js"></script>
+    <script type="text/javascript" src="jquery/ui/ui.draggable.js"></script>
+    <script type="text/javascript" src="jquery/ui/ui.resizable.js"></script>
+    <script type="text/javascript" src="jquery/ui/ui.dialog.js"></script>
+    <script type="text/javascript" src="jquery/ui/ui.tabs.js"></script>
+    <script type="text/javascript" src="jquery/ui/ui.slider.js"></script>
+    <script type="text/javascript" src="jquery/ui/ui.accordion.js"></script>
+    <script type="text/javascript" src="jquery/ui/effects.core.js"></script>
+    <script type="text/javascript" src="jquery/ui/effects.slide.js"></script>
+    <script type="text/javascript" src="jquery/ui/effects.drop.js"></script>
+    <script type="text/javascript" src="jquery/external/bgiframe/jquery.bgiframe.js"></script>
+    <script type="text/javascript" src="jquery/jquery-buttons.js"></script>
+<script type="text/javascript">
+
+var Version = "0.064";
+var WideEmpire = true;        // Много планет.
+var DEBUG = 0;    // показывать отладочную информацию
+
+// --------------- Функции для работы с куками -------------------------
+
+function readCookie(name) {
+    var nameEQ = name + "=";
+    var ca = document.cookie.split(';');
+    for(var i=0;i < ca.length;i++) {
+        var c = ca[i];
+        while (c.charAt(0)==' ') c = c.substring(1,c.length);
+        if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+    }
+    return null;
+}
+
+function createCookie(name,value,days) {
+    var expires;
+    if (days) {
+        var date = new Date();
+        date.setTime(date.getTime()+(days*24*60*60*1000));
+        expires = "; expires="+date.toGMTString();
+    }
+    else expires = "";
+    document.cookie = name+"="+value+expires+"; path=/";
+}
+
+var lang = readCookie ("empirelang");
+if (lang == null) lang = "en";
+
+//var comtheme = readCookie ("comtheme");
+//if (comtheme == null) comtheme = "trontastic";
+comtheme = "trontastic";
+
+// Подключить стиль оформления.
+document.write ("<link type=\"text/css\" href=\"jquery/themes/"+comtheme+"/ui.all.css\" rel=\"stylesheet\" />");
+
+</script>
+</head>
+
+<body onload="InitEmpire();">
+
+<script type="text/javascript"> 
+
+// Загрузить настройки симулятора.
+var EmpireConfig = new Array ();
+LoadConfig();
+
+// --------------- Строки для локализации -------------------------
+
+if ( lang == "ru" )
+{
+    var loca = {
+     LOCA_TITLE: "Империя",
+     LOCA_EXP_TECH: "Экспедиционная технология", LOCA_ASTROPHYSICS: "Астрофизика", 
+     LOCA_SPY_RESON: "Сырьё на", LOCA_SPY_PLAYER: "Игрок", LOCA_SPY_MOON: "Луна",
+     LOCA_SPY_FLEET: "Флоты",  LOCA_SPY_DEFENSE: "Оборона", LOCA_SPY_BUILDINGS: "Постройки", LOCA_SPY_RESEARCH: "Исследования", LOCA_SPY_MINES: "Шахты", 
+     LOCA_M: "Металл", LOCA_K: "Кристалл", LOCA_D: "Дейтерий", LOCA_E: "Энергия", LOCA_SC: "МТ", LOCA_LC: "БТ",  LOCA_DAYS: "дн", LOCA_NO: "Нет", 
+     TITLE_COLONY: "Колония", TITLE_MOON: "Луна", TITLE_ADD_PLANET: "Добавить планету", TITLE_ADD_MOON: "Добавить луну", TITLE_SETTINGS: "Настройки", TITLE_HELP: "Справка",
+     LOCA_COST_CALC: "Расчёт стоимости", LOCA_COST: "Стоимость", LOCA_FULL_COST: "Полная стоимость", LOCA_TIME: "Время", LOCA_FULL_TIME: "Полное время",
+     LOCA_FACTOR: "Коэффициент производста", LOCA_PER_HOUR: "В час", LOCA_PER_DAY: "В день", LOCA_PER_WEEK: "В неделю", LOCA_BOOSTER: "Бустер", 
+     LOCA_PNAME: "Название", LOCA_MAXTEMP: "Максимальная температура", LOCA_POINTS: "Очки", LOCA_TOTAL: "Всего", LOCA_TOTAL_TIP: "Без учета Исследований", LOCA_BALANCE: "Баланс", 
+     LOCA_OPT1: "Инженер", LOCA_OPT1T: "Сокращает вдвое потери в обороне, +10% больше энергии ",
+     LOCA_OPT2: "Геолог", LOCA_OPT2T: "+10% доход от шахты ",
+     LOCA_OPT3: "Технократ", LOCA_OPT3T: "+2 уровень шпионажа, 25% меньше времени на исследования ",
+     LOCA_OPT4: "Старый дизайн", LOCA_OPT4T: "Добыча дейтерия, размер хранилищ, солнечные спутники, Астрофизика",
+     LOCA_OPT5: "Ускорение Вселенной ",
+     LOCA_READIN_HEAD: "Вчитывание шпионских докладов", LOCA_READIN: "Вчитать", 
+     LOCA_SETTINGS_HEAD: "Настройки Империи", LOCA_HELP_HEAD: "Империя - Справка", 
+    };
+
+    var TechNames = {
+     202: "Малый транспорт", 203: "Большой транспорт", 204: "Лёгкий истребитель", 205: "Тяжёлый истребитель", 
+     206: "Крейсер", 207: "Линкор", 208: "Колонизатор", 209: "Переработчик", 210: "Шпионский зонд", 
+     211: "Бомбардировщик", 212: "Солнечный спутник", 213: "Уничтожитель", 214: "Звезда смерти", 215: "Линейный крейсер",
+
+     401: "Ракетная установка", 402: "Лёгкий лазер", 403: "Тяжёлый лазер", 404: "Пушка Гаусса", 405: "Ионное орудие", 
+     406: "Плазменное орудие", 407: "Малый щитовой купол", 408: "Большой щитовой купол", 502: "Ракета-перехватчик", 503: "Межпланетная ракета",
+
+     1: "Рудник по добыче металла", 2: "Рудник по добыче кристалла", 3: "Синтезатор дейтерия",
+     4: "Солнечная электростанция", 12: "Термоядерная электростанция", 14: "Фабрика роботов",
+     15: "Фабрика нанитов", 21: "Верфь", 22: "Хранилище металла", 23: "Хранилище кристалла", 24: "Ёмкость для дейтерия",
+     31: "Исследовательская лаборатория", 33: "Терраформер", 34: "Склад альянса",
+     41: "Лунная база", 42: "Сенсорная фаланга", 43: "Ворота", 44: "Ракетная шахта",
+
+     106: "Шпионаж", 108: "Компьютерная технология", 109: "Оружейная технология", 110: "Щитовая технология",
+     111: "Броня космических кораблей", 113: "Энергетическая технология", 114: "Гиперпространственная технология",
+     115: "Реактивный двигатель", 117: "Импульсный двигатель", 118: "Гиперпространственный двигатель",
+     120: "Лазерная технология", 121: "Ионная технология", 122: "Плазменная технология",
+     123: "Межгалактическая исследовательская сеть", 124: "Астрофизика", 199: "Гравитационная технология"
+    };
+}
+
+else if ( lang == "bg" )
+{
+    var loca = {
+        LOCA_TITLE: "Империя",
+        LOCA_EXP_TECH: "Експедиционна технология", LOCA_ASTROPHYSICS: "Астрофизика", 
+        LOCA_SPY_RESON: "Ресурси на", LOCA_SPY_PLAYER: "Играч", LOCA_SPY_MOON: "Луна",
+        LOCA_SPY_FLEET: "Флоти", LOCA_SPY_DEFENSE: "Защити", LOCA_SPY_BUILDINGS: "Сгради", LOCA_SPY_RESEARCH: "Пручвания", LOCA_SPY_MINES: "Мини", 
+        LOCA_M: "Метал", LOCA_K: "Кристали", LOCA_D: "Деутериум", LOCA_E: "Енергия", LOCA_SC: "МТ", LOCA_LC: "ГТ", LOCA_DAYS: "дн", LOCA_NO: "Не", 
+        TITLE_COLONY: "Колония", TITLE_MOON: "Луна", TITLE_ADD_PLANET: "Добавяне на планета", TITLE_ADD_MOON: "Добавяне на луна", TITLE_SETTINGS: "Настройки", TITLE_HELP: "Справка",
+        LOCA_COST_CALC: "Пресмятане на цената", LOCA_COST: "Цена", LOCA_FULL_COST: "Обща цена", LOCA_TIME: "Време", LOCA_FULL_TIME: "Общо време",
+        LOCA_FACTOR: "Коефициент на производството", LOCA_PER_HOUR: "за час", LOCA_PER_DAY: "Дневно", LOCA_PER_WEEK: "Седмично", LOCA_BOOSTER: "Ускорител", 
+        LOCA_PNAME: "Име", LOCA_MAXTEMP: "Максимална температура", LOCA_POINTS: "Точки", LOCA_TOTAL: "Общо", LOCA_TOTAL_TIP: "Без проучванията", LOCA_BALANCE: "Баланс", 
+        LOCA_OPT1: "Инженер", LOCA_OPT1T: "Съкращава наполовина загубите на защитите, +10% повече енергия ",
+        LOCA_OPT2: "Геолог", LOCA_OPT2T: "+10% доход от мините ",
+        LOCA_OPT3: "Технократ", LOCA_OPT3T: "+2 нива на шпионажа, 25% по-малко време за проучвания ",
+        LOCA_OPT4: "Старият дизайн", LOCA_OPT4T: "Добив на деутериум, размер на складовете, соларни сателити, Астрофизика",
+        LOCA_OPT5: "Скорост на вселената ",
+        LOCA_READIN_HEAD: "Четене на шпионски доклади", LOCA_READIN: "Прочитане", 
+        LOCA_SETTINGS_HEAD: "Настройки на Империята", LOCA_HELP_HEAD: "Империя - Справка", 
+    };
+
+    var TechNames = {
+        202: "Малък транспортьор", 203: "Голям транспортьор", 204: "Лек изтребител", 205: "Тежък изтребител", 
+        206: "Кръстосвач", 207: "Боен кораб", 208: "Колонизатор", 209: "Рециклатор", 210: "Шпионска сонда", 
+        211: "Бомбардировач", 212: "Соларен сателит", 213: "Унищожител", 214: "Звезда на смъртта", 215: "Боен кръстосвач",
+
+        401: "Ракетна установка", 402: "Лек лазер", 403: "Тежък лазер", 404: "Гаус оръдие", 405: "Йонно оръдие", 
+        406: "Плазмено оръдие", 407: "Малък щит", 408: "Голям щит", 502: "Антибалистични ракети", 503: "Междупланетни ракети",
+
+        1: "Мина за метал", 2: "Мина за кристал", 3: "Синтезатор на деутериум",
+        4: "Слънчева електроцентрала", 12: "Ядрена електроцентрала", 14: "Фабрика за роботи",
+        15: "Фабрика за нанити", 21: "Докове", 22: "Склад за метал", 23: "Склад за кристал", 24: "Резервоар за деутериум",
+        31: "Изследователска лаборатория", 33: "Тераформер", 34: "Склад на съюза",
+        41: "Лунна база", 42: "Сензор", 43: "Портал", 44: "Ракетен силоз",
+
+        106: "Шпионаж", 108: "Компютърна технология", 109: "Оръжейна технология", 110: "Технология за щитовете",
+        111: "Технология за броня", 113: "Енергийна технология", 114: "Хиперпространствена технология",
+        115: "Реактивен двигател", 117: "Импулсен двигател", 118: "Хипер двигател",
+        120: "Лазерна технология", 121: "Йонна технология", 122: "Плазмена технология",
+        123: "Междугалактична изследователска мрежа", 124: "Астрофизика", 199: "Гравитационна технология"
+    };
+}
+
+else    // default language is English
+{
+    var loca = {
+     LOCA_TITLE: "Empire Tool",
+     LOCA_EXP_TECH: "Expedition Technology", LOCA_ASTROPHYSICS: "Astrophysics", 
+     LOCA_SPY_RESON: "Resources on", LOCA_SPY_PLAYER: "Player", LOCA_SPY_MOON: "Moon",
+     LOCA_SPY_FLEET: "Ships",  LOCA_SPY_DEFENSE: "Defense", LOCA_SPY_BUILDINGS: "Construction", LOCA_SPY_RESEARCH: "Research", LOCA_SPY_MINES: "Mines", 
+     LOCA_M: "Metal", LOCA_K: "Crystal", LOCA_D: "Deuterium", LOCA_E: "Energy", LOCA_SC: "SC", LOCA_LC: "LC", LOCA_DAYS: "d", LOCA_NO: "No", 
+     TITLE_COLONY: "Colony", TITLE_MOON: "Moon", TITLE_ADD_PLANET: "Add Planet", TITLE_ADD_MOON: "Add Moon", TITLE_SETTINGS: "Settings", TITLE_HELP: "Help",
+     LOCA_COST_CALC: "Costs calculator", LOCA_COST: "Cost", LOCA_FULL_COST: "Full cost", LOCA_TIME: "Time", LOCA_FULL_TIME: "Full time",
+     LOCA_FACTOR: "Production factor", LOCA_PER_HOUR: "Per hour", LOCA_PER_DAY: "Per day", LOCA_PER_WEEK: "Per week", LOCA_BOOSTER: "Booster", 
+     LOCA_PNAME: "Planet name", LOCA_MAXTEMP: "Max temperature",  LOCA_POINTS: "Points",  LOCA_TOTAL: "Total",  LOCA_TOTAL_TIP: "Not counting Research", LOCA_BALANCE: "Enery total", 
+     LOCA_OPT1: "Engineer", LOCA_OPT1T: "Halves losses to defense, +10% energy productiion ",
+     LOCA_OPT2: "Geologist", LOCA_OPT2T: "+10% mine production ",
+     LOCA_OPT3: "Technocrat", LOCA_OPT3T: "+2 espionage levels, 25% less research time ",
+     LOCA_OPT4: "Old design", LOCA_OPT4T: "Old deuterium production, storages, solar satellites, no Astrophysics etc.",
+     LOCA_OPT5: "Universe Speed ",
+     LOCA_READIN_HEAD: "Parse and load spy reports", LOCA_READIN: "ReadIn", 
+     LOCA_SETTINGS_HEAD: "Empire Settings", LOCA_HELP_HEAD: "Empire Help", 
+    };
+
+    var TechNames = {
+     202: "Small Cargo", 203: "Large Cargo", 204: "Light Fighter", 205: "Heavy Fighter", 
+     206: "Cruiser", 207: "Battleship", 208: "Colony Ship", 209: "Recycler", 210: "Espionage Probe", 
+     211: "Bomber", 212: "Solar Satellite", 213: "Destroyer", 214: "Deathstar", 215: "Battlecruiser",
+
+     401: "Rocket Launcher", 402: "Light Laser", 403: "Heavy Laser", 404: "Gauss Cannon", 405: "Ion Cannon", 
+     406: "Plasma Turret", 407: "Small Shield Dome", 408: "Large Shield Dome", 502: "Anti-Ballistic Missiles", 503: "Interplanetary Missiles",
+
+     1: "Metal Mine", 2: "Crystal Mine", 3: "Deuterium Synthesizer",
+     4: "Solar Plant", 12: "Fusion Reactor", 14: "Robotics Factory",
+     15: "Nanite Factory", 21: "Shipyard", 22: "Metal Storage", 23: "Crystal Storage", 24: "Deuterium Tank",
+     31: "Research Lab", 33: "Terraformer", 34: "Alliance Depot",
+     41: "Lunar Base", 42: "Sensor Phalanx", 43: "Jump Gate", 44: "Missile Silo",
+
+     106: "Espionage Technology", 108: "Computer Technology", 109: "Weapons Technology", 110: "Shielding Technology",
+     111: "Armour Technology", 113: "Energy Technology", 114: "Hyperspace Technology",
+     115: "Combustion Drive", 117: "Impulse Drive", 118: "Hyperspace Drive",
+     120: "Laser Technology", 121: "Ion Technology", 122: "Plasma Technology",
+     123: "Intergalactic Research Network", 124: "Astrophysics", 199: "Graviton Technology"
+    };
+}
+
+if ( EmpireConfig['oldver'] ) TechNames[124] = loca['LOCA_EXP_TECH'];
+
+document.title = loca['LOCA_TITLE'];
+
+// --------------- Вспомогательные функции -------------------------
+
+function dprint (str) {
+    if (DEBUG) {
+        html = $("#DEBUG").html ();
+        $("#DEBUG").html (html + str + "<br>");
+    }
+}
+
+function php_number_format( number, decimals, dec_point, thousands_sep ) {
+    // http://kevin.vanzonneveld.net
+    var n = number, c = isNaN(decimals = Math.abs(decimals)) ? 2 : decimals;
+    var d = dec_point == undefined ? ',' : dec_point;
+    var t = thousands_sep == undefined ? '.' : thousands_sep, s = n < 0 ? '-' : '';
+    var i = parseInt(n = Math.abs(+n || 0).toFixed(c)) + '', j = (j = i.length) > 3 ? j % 3 : 0;
+    return s + (j ? i.substr(0, j) + t : '') + i.substr(j).replace(/(\d{3})(?=\d)/g, '$1' + t) + (c ? d + Math.abs(n - i).toFixed(c).slice(2) : '');
+}
+
+function php_str_replace(search, replace, subject) {
+    // http://kevin.vanzonneveld.net
+    var s = subject;
+    var ra = r instanceof Array, sa = s instanceof Array;
+    var f = [].concat(search);
+    var r = [].concat(replace);
+    var i = (s = [].concat(s)).length;
+    var j = 0;
+    while (j = 0, i--) {
+        if (s[i]) {
+            while (s[i] = (s[i]+'').split(f[j]).join(ra ? r[j] || '' : r[0]), ++j in f){};
+        }
+    }
+    return sa ? s : s[0];
+}
+
+// Nice Number.
+function nn (number)
+{
+    return php_number_format(number,0,",",".");
+}
+
+if (!Number.toFixed) {
+  Number.prototype.toFixed=function(n){
+    return Math.round(this*Math.pow(10, n)) / Math.pow(10, n);
+  }
+}
+
+function timfmt (n) { return (n < 10) ? "0"+n : n; }
+
+// Преобразовать количество секунд в строку вида h:mm:ss
+function TimeFormat (seconds)
+{
+    var html = "";
+    days = Math.floor(seconds / (24*3600));
+    hours = Math.floor(seconds / 3600 % 24);
+    mins = Math.floor(seconds  / 60 % 60);
+    secs = Math.floor(seconds / 1 % 60);
+    if (days) html = days+loca['LOCA_DAYS']+" ";
+    html += timfmt(hours) + ":" + timfmt(mins) + ":" + timfmt(secs);
+    return html;
+}
+
+// Нормализовать число.
+function toint (num)
+{
+    if ( typeof (num) == "undefined" ) num = 0;
+    return parseInt (num);
+}
+
+function isbuilding (obj) { return (toint(obj) < 100); }
+function isfleet (obj) { return (toint(obj) >= 200 && toint(obj) < 300); }
+function isdefense (obj) { return (toint(obj) >= 400); }
+function isresearch (obj) { return (toint(obj) >= 100 && toint(obj) < 200); }
+
+function getParam(sParamName){
+    var Params = location.search.substring(1).split("&"); // отсекаем «?» и вносим переменные и их значения в массив
+    var variable = "";
+    for (var i = 0; i < Params.length; i++){ // пробегаем весь массив
+        if (Params[i].split("=")[0] == sParamName){ // если это искомая переменная — бинго!
+            if (Params[i].split("=").length > 1) variable = Params[i].split("=")[1]; // если значение параметра задано, то возвращаем его
+            return variable;
+        }
+    }
+    return "";
+}
+
+function shorten (str, n)
+{
+    if(str.length > n){  
+        var s = str.substr(0, n);
+        var words = s.split(' '); 
+        words[words.length-1] = '';
+        str = words.join(' ') + '&hellip;'
+    }
+    return str;
+}
+
+// --------------- Управление планетами -------------------------
+
+var plist = new Array ();
+var pnum = 0;
+var GlobalResearch = new Array ();
+var SelectedPlanet;
+
+function AddPlanet (moon)
+{
+    var p = "p"+pnum+"_";
+    plist[p+"m"] = moon;
+    plist[p+"n"] = moon ? loca['TITLE_MOON'] : loca['TITLE_COLONY'];
+    plist[p+"t"] = 50;
+
+    var html = GenPlanetTab (pnum);
+    $("#tab_content").empty ();
+    $("#tab_content").append (html);
+    AddTab (plist[p+"n"] + ( moon ? " ("+loca['TITLE_MOON']+")" : "" ), pnum);
+
+    pnum++;
+}
+
+function AddPlanetFromReport (spy)
+{
+    var p = "p"+pnum+"_";
+    var moon = toint (spy['moon']);
+    ReplacePlanet (pnum, spy)
+
+    var html = GenPlanetTab (pnum);
+    $("#tab_content").empty ();
+    $("#tab_content").append (html);
+    AddTab (plist[p+"n"] + ( moon ? " (Луна)" : "" ), pnum);
+
+    pnum++;
+}
+
+function RemovePlanet (id)
+{
+    var temp = new Array (), p = 0;
+    var paramlist = [ 1, 2, 3, 4, 12, 14, 15, 21, 22, 23, 24, 31, 33, 34, 44, 41, 42, 43,
+                             202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215,
+                             401, 402, 403, 404, 405, 406, 407, 408, 502, 503, 
+                              "m", "n", "t" ];
+    if (id >= pnum || id < 0) return;
+    for (i=0; i<id; i++, p++) {
+        for (var n in paramlist) temp["p"+p+"_"+paramlist[n]] = plist["p"+i+"_"+paramlist[n]];
+    }
+    for (i=id+1; i<pnum; i++, p++) {
+        for (var n in paramlist) temp["p"+p+"_"+paramlist[n]] = plist["p"+i+"_"+paramlist[n]];
+    }
+    plist = temp; pnum--;
+}
+
+function ReplacePlanet (id, spy)
+{
+    var p = "p"+id+"_";
+    var fleet = [ 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215 ];
+    var defense = [ 401, 402, 403, 404, 405, 406, 407, 408, 502, 503 ];
+    var buildings = [ 1, 2, 3, 4, 12, 14, 15, 21, 22, 23, 24, 31, 33, 34, 44, 41, 42, 43 ];
+    var research = [ 106, 108, 109, 110, 111, 113, 114, 115, 117, 118, 120, 121, 122, 123, 124, 199 ];
+
+    if (spy['level'] > 0) for (var i in fleet) plist[p+fleet[i]] = spy['o'+fleet[i]];
+    if (spy['level'] > 1) for (var i in defense) plist[p+defense[i]] = spy['o'+defense[i]];
+    if (spy['level'] > 2) for (var i in buildings) plist[p+buildings[i]] = spy['o'+buildings[i]];
+    if (spy['level'] > 3) for (var i in research) GlobalResearch[research[i]] = spy['o'+research[i]];
+    plist[p+"m"] = spy['moon'];
+    plist[p+"n"] = spy['planet'];
+    plist[p+"t"] = spy['temp'];
+}
+
+// --------------- Генерация списка планет -------------------------
+
+var $tabs;
+var tabscounter = 2;
+var tabmapper = new Array ();
+
+function AddTab(tab_title, planet_id)
+{
+    $tabs.tabs('add', '#tabs-'+tabscounter, tab_title);
+    tabmapper[tabscounter] = planet_id;
+    tabscounter++;
+    UpdateTooltips (planet_id);
+    UpdateObjEvents ();
+    RecalcProduction (planet_id);
+    RecalcCost (planet_id);
+}
+
+// Полностью обновить панель планеты.
+function UpdatePlanetTab (id)
+{
+    var p = "p"+id+"_";
+    var buildings = [ 1, 2, 3, 4, 12, 14, 15, 21, 22, 23, 24, 31, 33, 34, 44 ];
+    var m_buildings = [ 14, 21, 22, 23, 24, 41, 42, 43 ];
+    var research = [ 106, 108, 109, 110, 111, 113, 114, 115, 117, 118, 120, 121, 122, 123, 124, 199 ];
+    var fleet = [ 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215 ];
+    var defense = [ 401, 402, 403, 404, 405, 406, 407, 408, 502, 503 ];
+    var moon = plist["p"+id+"_m"];
+
+    if ( moon ) {
+        for (var i in m_buildings) {
+            $("div[planetid='"+id+"'] input.objedit"+m_buildings[i]).val (toint(plist[p+m_buildings[i]]));
+            $("div[planetid='"+id+"'] .objpic"+m_buildings[i]).attr ("updated", 0);
+        }
+    }
+    else {
+        for (var i in buildings) {
+            $("div[planetid='"+id+"'] input.objedit"+buildings[i]).val (toint(plist[p+buildings[i]]));
+            $("div[planetid='"+id+"'] .objpic"+buildings[i]).attr ("updated", 0);
+        }
+    }
+    for (var i in fleet) {
+        $("div[planetid='"+id+"'] input.objedit"+fleet[i]).val (toint(plist[p+fleet[i]]));
+        $("div[planetid='"+id+"'] .objpic"+fleet[i]).attr ("updated", 0);
+    }
+    for (var i in defense) {
+        $("div[planetid='"+id+"'] input.objedit"+defense[i]).val (toint(plist[p+defense[i]]));
+        $("div[planetid='"+id+"'] .objpic"+defense[i]).attr ("updated", 0);
+    }
+    for (var i in research) {
+        $("div[planetid='"+id+"'] input.objedit"+research[i]).val (toint(GlobalResearch[research[i]]));
+        $("div[planetid='"+id+"'] .objpic"+research[i]).attr ("updated", 0);
+    }
+    $("div[planetid='"+id+"'] nobr.objpic124").html ( shorten(TechNames[124], 22) );    // Астрофизика/Экспа.
+
+    $(".pname").val ( plist[p+"n"] );
+    $(".maxtemp").val ( toint (plist[p+"t"] ) );
+    var selected = $tabs.tabs( "option", "selected" );
+    if (selected == -1) selected = 0;
+    if (plist[p+"m"]) $('#full_content .ui-tabs-nav li:eq('+selected+') a').text( plist[p+"n"] + " (Луна)"); 
+    else $('#full_content .ui-tabs-nav li:eq('+selected+') a').text( plist[p+"n"] ); 
+
+    InitPrices (id);
+    RecalcProduction (id);
+    RecalcCost (id);
+    UpdateTooltips (id);
+    UpdatePermalink ();
+}
+
+// Обновить всплывающие подскази.
+function UpdateTooltips (id)
+{
+    var pre = "", p = "p"+id+"_";
+    var impdrive = toint (GlobalResearch[117]);
+    var mstore = toint(plist[p+"22"]), kstore = toint(plist[p+"23"]), dstore = toint(plist[p+"24"]);
+    var exp = toint (GlobalResearch[124]);
+
+    var m = toint(plist["p"+id+"_1"]), k = toint(plist["p"+id+"_2"]), d = toint(plist["p"+id+"_3"]);
+    var e = toint(plist["p"+id+"_4"]), f = toint(plist["p"+id+"_12"]), sat = toint(plist["p"+id+"_212"]);
+    var energo = toint (GlobalResearch[113]);
+    var maxtemp = toint(plist["p"+id+"_t"]);
+    if (EmpireConfig['engineer']) engineer = 1.1;
+    else engineer = 1;
+    var prc_m = parseFloat ( $("#prod_"+id+" .prc_m").val () );
+    var prc_k = parseFloat ( $("#prod_"+id+" .prc_k").val () );
+    var prc_d = parseFloat ( $("#prod_"+id+" .prc_d").val () );
+    var prc_e = parseFloat ( $("#prod_"+id+" .prc_e").val () );
+    var prc_f = parseFloat ( $("#prod_"+id+" .prc_f").val () );
+    var prc_s = parseFloat ( $("#prod_"+id+" .prc_s").val () );
+    var prod_e = prod_solar (e, prc_e) * engineer;
+    var prod_f = prod_fusion (f, energo, prc_f) * engineer;
+    var prod_s = sat * prod_sat (maxtemp) * prc_s * engineer;
+    var cons_m = cons_metal (m) * prc_m;
+    var cons_k = cons_crys (k) * prc_k;
+    var cons_d = cons_deut (d) * prc_d;
+    emax = prod_e + prod_f + prod_s;
+    econs = ( cons_m + cons_k + cons_d );
+    e_total = Math.floor ( emax - econs );
+    factor = 1;
+    if ( e_total < 0 ) factor = Math.max (0, 1 - Math.abs (e_total) / econs);
+    var prod_m = prod_metal (m, prc_m) * factor * EmpireConfig['xspeed'];
+    var prod_k = prod_crys (k, prc_k) * factor * EmpireConfig['xspeed'];
+    var prod_d = prod_deut (d, maxtemp, prc_d) * factor * EmpireConfig['xspeed'];
+    var cons_f = cons_fusion (f, prc_f) * EmpireConfig['xspeed'];
+    prod_d -= cons_f;
+
+    for (var n in TechNames) {
+        jQuery.each ($(".objpic"+n), function () {
+            if ( $(this).attr ("updated") == 0 ) {    // Используем специальный аттрибут, чтобы не создавать каждый раз новый тултип.
+
+                // Расширенные подсказки.
+                if ( n == 117 || n == 503) pre = "<br/><i>Радиус действия межпланетных ракет: " + Math.max (0, (impdrive * 2 - 1)) + "</i>";
+                else if (n == 1) pre = "<br/><i>Выработка: " + nn (prod_m) + "</i><br/><i>Потребление: " + nn (cons_m) + "</i>";
+                else if (n == 2) pre = "<br/><i>Выработка: " + nn (prod_k) + "</i><br/><i>Потребление: " + nn (cons_k) + "</i>";
+                else if (n == 3) pre = "<br/><i>Выработка: " + nn (prod_d) + "</i><br/><i>Потребление: " + nn (cons_d) + "</i>";
+                else if (n == 4) pre = "<br/><i>Выработка: " + nn (prod_e) + "</i>";
+                else if (n == 12) pre = "<br/><i>Выработка: " + nn (prod_f) + "</i>";
+                else if (n == 212) pre = "<br/><i>Выработка: " + nn (prod_s) + "</i>";
+                else if (n == 22) pre = "<br/><i>Вместимость: " + nn (store_capacity (mstore)) + "</i>";
+                else if (n == 23) pre = "<br/><i>Вместимость: " + nn (store_capacity (kstore)) + "</i>";
+                else if (n == 24) pre = "<br/><i>Вместимость: " + nn (store_capacity (dstore)) + "</i>";
+                else if ( isfleet (n) ) {
+                    if ( toint(plist[p+n]) > 0 ) {
+                        var price = new Array ();
+                        ObjPrice ( n, toint(plist[p+n]), price );
+                        pre = "<br/><i>Необходимо переработчиков: " + nn (recycles_need (price['m'] * 0.3, price['k'] * 0.3)) + "</i>";
+                    }
+                    else pre = "";
+                }
+                else if ( n == 122 && !EmpireConfig['oldver'] ) {    // Плазменная технология
+                    var plasma_m = Math.round (prod_m * ((GlobalResearch[122] * 1) / 100));
+                    var plasma_k = Math.round (prod_k * ((GlobalResearch[122] * 0.66) / 100));
+                    pre = "<br/><i>Увеличние производства "+loca['LOCA_M']+": "+nn(plasma_m)+", "+loca['LOCA_K']+": "+nn(plasma_k)+"</i>";
+                }
+                else if ( n == 124 ) {
+                    if ( !EmpireConfig['oldver'] ) pre = "<br/><i>Количество планет: " + (Math.ceil(exp / 2) + 1) + "</i>";
+                    pre += "<br/><i>Одновременных экспедиций: "+Math.floor(Math.sqrt (exp))+"</i>";
+                }
+                else pre = "";
+
+                $(this).wTooltip({content: TechNames[n] + pre });
+                $(this).attr ("updated", 1);
+            }
+        });
+    }
+}
+
+// Принудительно обновить тултип для объекта.
+function ForceUpdateTooltip (id, n)
+{
+    $(".objpic"+n).attr ("updated", 0);
+    UpdateTooltips (id);
+}
+
+// Обновить обрабочики полей ввода.
+function UpdateObjEvents ()
+{
+    for (var n in TechNames) {
+        jQuery.each ($(".objedit"+n), function () {
+            $(this).focusout (ObjOnFocusOut);
+        } );
+        jQuery.each ($(".objpic"+n), function () {
+            $(this).click (ObjOnClick);
+        } );
+    }
+    $(".pname").focusout (PlanetNameChange);
+    $(".maxtemp").focusout (PlanetMaxTempChange);
+    $(".woresearch").wTooltip({content: loca['LOCA_TOTAL_TIP'] });
+}
+
+// Пересчитать производство для планеты id.
+function RecalcProduction (id)
+{
+    // Получить уровни построек.
+    var m = toint(plist["p"+id+"_1"]), k = toint(plist["p"+id+"_2"]), d = toint(plist["p"+id+"_3"]);
+    var e = toint(plist["p"+id+"_4"]), f = toint(plist["p"+id+"_12"]), sat = toint(plist["p"+id+"_212"]);
+    var energo = toint (GlobalResearch[113]);
+    var plasma = toint (GlobalResearch[122]);
+    var maxtemp = toint(plist["p"+id+"_t"]);
+
+    // Добавить эффекты от геолога и инженера.
+    if (EmpireConfig['geologe']) geologe = 1.1;
+    else geologe = 1;
+    if (EmpireConfig['engineer']) engineer = 1.1;
+    else engineer = 1;
+
+    // Эффективность.
+    var prc_m = parseFloat ( $("#prod_"+id+" .prc_m").val () );
+    var prc_k = parseFloat ( $("#prod_"+id+" .prc_k").val () );
+    var prc_d = parseFloat ( $("#prod_"+id+" .prc_d").val () );
+    var prc_e = parseFloat ( $("#prod_"+id+" .prc_e").val () );
+    var prc_f = parseFloat ( $("#prod_"+id+" .prc_f").val () );
+    var prc_s = parseFloat ( $("#prod_"+id+" .prc_s").val () );
+
+    // Бустеры.
+    var boost_m = parseFloat ( $("#prod_"+id+" .boost_m").val () );
+    var boost_k = parseFloat ( $("#prod_"+id+" .boost_k").val () );
+    var boost_d = parseFloat ( $("#prod_"+id+" .boost_d").val () );
+
+    if (EmpireConfig['oldver']) boost_m = boost_k = boost_d = plasma = 0;
+
+    // Посчитать выработку и затраты энергии для указанной планеты.
+    var prod_e = prod_solar (e, prc_e) * engineer;
+    var prod_f = prod_fusion (f, energo, prc_f) * engineer;
+    var prod_s = sat * prod_sat (maxtemp) * prc_s * engineer;
+    var cons_m = cons_metal (m) * prc_m;
+    var cons_k = cons_crys (k) * prc_k;
+    var cons_d = cons_deut (d) * prc_d;
+    emax = prod_e + prod_f + prod_s;
+    econs = ( cons_m + cons_k + cons_d );
+    e_total = Math.floor ( emax - econs );
+    factor = 1;
+    if ( e_total < 0 ) factor = Math.max (0, 1 - Math.abs (e_total) / econs);
+
+    // Посчитать выработку ресурсов.
+    var prod_m = prod_metal (m, prc_m) * (geologe+boost_m+((plasma * 1)/100)) * factor * EmpireConfig['xspeed'];
+    var prod_k = prod_crys (k, prc_k) * (geologe+boost_k+((plasma * 0.66)/100)) * factor * EmpireConfig['xspeed'];
+    var prod_d = prod_deut (d, maxtemp, prc_d) * (geologe+boost_d) * factor * EmpireConfig['xspeed'];
+    var cons_f = cons_fusion (f, prc_f) * EmpireConfig['xspeed'];
+    prod_d -= cons_f;
+
+    // Естественное производство.
+    if ( ! toint(plist["p"+id+"_m"]) ) {
+        if (EmpireConfig['oldver']) {
+            prod_m += 20 * EmpireConfig['xspeed'];
+            prod_k += 10 * EmpireConfig['xspeed'];
+        }
+        else {
+            prod_m += 30 * EmpireConfig['xspeed'];
+            prod_k += 15 * EmpireConfig['xspeed'];
+        }
+    }
+
+    // Названия объектов, с указанием уровней.
+    $("#prod_"+id+" span.prod_head").html ( "<nobr><span class=\"LOCA_FACTOR\">Коэффициент производста</span>: "+(factor*100).toFixed(1)+"% (<a title=\""+loca['LOCA_OPT5']+"\">"+EmpireConfig['xspeed']+"x)</a></nobr>" );
+    $("#prod_"+id+" span.prod_m").html ( TechNames[1] + " ("+ m +")");
+    $("#prod_"+id+" span.prod_k").html ( TechNames[2] + " ("+ k +")");
+    $("#prod_"+id+" span.prod_d").html ( TechNames[3] + " ("+ d +")");
+    $("#prod_"+id+" span.prod_e").html ( TechNames[4] + " ("+ e +")");
+    $("#prod_"+id+" span.prod_f").html ( TechNames[12] + " ("+ f +")");
+    $("#prod_"+id+" span.prod_sat").html ( TechNames[212] + " ("+ sat +")");
+
+    // Выработка / потребление дейта (ТЭС).
+    $a = $("#prod_"+id+" th.mh");
+    $a.text ( nn(prod_m) ); $a.next().text ( nn(prod_m*24) ); $a.next().next().text ( nn(prod_m*24*7) );
+    $a = $("#prod_"+id+" th.kh");
+    $a.text ( nn(prod_k) ); $a.next().text ( nn(prod_k*24) ); $a.next().next().text ( nn(prod_k*24*7) );
+    $a = $("#prod_"+id+" th.dh");
+    $a.text ( nn(prod_d) ); $a.next().text ( nn(prod_d*24) ); $a.next().next().text ( nn(prod_d*24*7) );
+    $a = $("#prod_"+id+" th.fh");
+    if ( cons_f == 0) { $a.text ( "-" ); $a.next().text ( "-" ); $a.next().next().text ( "-" ); }
+    else { $a.html ( "<a title=\"Потребление дейтерия\">-"+nn(cons_f)+"</a>" ); 
+             $a.next().html ( "<a title=\"Потребление дейтерия\">-"+nn(cons_f*24)+"</a>" ); 
+             $a.next().next().html ( "<a title=\"Потребление дейтерия\">-"+nn(cons_f*24*7)+"</a>" ); }
+
+    // Энергия.
+    if (cons_m) $("#prod_"+id+" th.me").text ( "-"+nn(cons_m) );
+    else $("#prod_"+id+" th.me").text ( "0" );
+    if (cons_k) $("#prod_"+id+" th.ke").text ( "-"+nn(cons_k) );
+    else $("#prod_"+id+" th.ke").text ( "0" );
+    if (cons_d) $("#prod_"+id+" th.de").text ( "-"+nn(cons_d) );
+    else $("#prod_"+id+" th.de").text ( "0" );
+
+    $("#prod_"+id+" th.ee").text ( nn(prod_e) );
+    $("#prod_"+id+" th.fe").text ( nn(prod_f) );
+    $("#prod_"+id+" th.se").text ( nn(prod_s) );
+    if (e_total > 0) $("#prod_"+id+" th.e_total").html ( "<font color=\"lime\">+"+nn(e_total)+"</font>" );
+    if (e_total < 0) $("#prod_"+id+" th.e_total").html ( "<font color=\"red\">"+nn(e_total)+"</font>" );
+    else $("#prod_"+id+" th.e_total").html ( "<font color=\"lime\">"+nn(e_total)+"</font>" );
+
+    for ( var str in loca ) {     // перевод строк
+        $("span."+str).text (loca[str]);
+    }
+}
+
+// Пересчитать стоимость планеты id.
+function RecalcCost (id)
+{
+    var mines = [ 1, 2, 3 ];
+    var buildings = [ 4, 12, 22, 23, 24, 14, 21, 31, 34, 44, 15, 33 ];
+    var m_buildings = [ 14, 21, 22, 23, 24, 41, 42, 43 ];
+    var defense = [ 401, 402, 403, 404, 405, 406, 407, 408, 502, 503 ];
+    var fleet = [ 204, 205, 206, 207, 202, 203, 208, 215, 211, 213, 214, 209, 210, 212 ];
+    var research = [ 113, 120, 121, 114, 122, 115, 117, 118, 106, 108, 124, 123, 199, 111, 109, 110 ];
+
+    var mm = 0, mk = 0, md = 0, mp = 0;
+    var bm = 0, bk = 0, bd = 0, bp = 0;
+    var dm = 0, dk = 0, dd = 0, dp = 0;
+    var fm = 0, fk = 0, fd = 0, fp = 0;
+    var rm = 0, rk = 0, rd = 0, rp = 0;
+    var tm = 0, tk = 0, td = 0, tp = 0;
+    var fpoints = 0, respoints = 0, prc;
+
+    for (var i in mines) {
+        var price = new Array ();
+        var level = toint (plist["p"+id+"_"+mines[i]]);
+        if (level) {
+            for (lvl=1; lvl<=level; lvl++) {
+                ObjPrice ( mines[i], lvl, price );
+                mm += price ['m']; mk += price ['k']; md += price ['d']; mp += price ['p'];
+            }
+        }
+    }
+    tm += mm; tk += mk; td += md; tp += mp; 
+
+    if ( plist["p"+id+"_m"] ) {
+        for (var i in m_buildings) {
+            var price = new Array ();
+            var level = toint (plist["p"+id+"_"+m_buildings[i]]);
+            if (level) {
+                for (lvl=1; lvl<=level; lvl++) {
+                    ObjPrice ( m_buildings[i], lvl, price );
+                    bm += price ['m']; bk += price ['k']; bd += price ['d']; bp += price ['p'];
+                }
+            }
+        }
+    }
+    else {
+        for (var i in buildings) {
+            var price = new Array ();
+            var level = toint (plist["p"+id+"_"+buildings[i]]);
+            if (level) {
+                for (lvl=1; lvl<=level; lvl++) {
+                    ObjPrice ( buildings[i], lvl, price );
+                    bm += price ['m']; bk += price ['k']; bd += price ['d']; bp += price ['p'];
+                }
+            }
+        }
+    }
+    tm += bm; tk += bk; td += bd; tp += bp; 
+
+    for (var i in defense) {
+        var price = new Array ();
+        var level = toint (plist["p"+id+"_"+defense[i]]);
+        ObjPrice ( defense[i], parseInt(level), price );
+        dm += price ['m']; dk += price ['k']; dd += price ['d']; dp += price ['p'];
+    }
+    tm += dm; tk += dk; td += dd; tp += dp; 
+    for (var i in fleet) {
+        var price = new Array ();
+        var level = toint (plist["p"+id+"_"+fleet[i]]);
+        ObjPrice ( fleet[i], parseInt(level), price );
+        fm += price ['m']; fk += price ['k']; fd += price ['d']; fp += price ['p'];
+        fpoints += parseInt(level);
+    }
+    tm += fm; tk += fk; td += fd; tp += fp; 
+
+    for (var i in research) {
+        var price = new Array ();
+        var level = toint (GlobalResearch[research[i]]);
+        if (level) {
+            for (lvl=1; lvl<=level; lvl++) {
+                ObjPrice ( research[i], lvl, price );
+                rm += price ['m']; rk += price ['k']; rd += price ['d']; rp += price ['p'];
+            }
+        }
+        respoints += level;
+    }
+    tm += rm; tk += rk; td += rd; tp += rp; 
+
+    if (tp == 0) prc = 0;
+    else prc = Math.round ( (mp*100)/tp );
+    $a = $("#cost_"+id+" th.costmines");
+    $a.text (nn(mm)); $a.next().text (nn(mk)); $a.next().next().text (nn(md)); $a.next().next().next().text (prc+"%"); $a.next().next().next().next().text ( nn(mp) );
+
+    if (tp == 0) prc = 0;
+    else prc = Math.round ( (bp*100)/tp );
+    $a = $("#cost_"+id+" th.costbuilding");
+    $a.text (nn(bm)); $a.next().text (nn(bk)); $a.next().next().text (nn(bd)); $a.next().next().next().text (prc+"%"); $a.next().next().next().next().text ( nn(bp) );
+
+    if (tp == 0) prc = 0;
+    else prc = Math.round ( (dp*100)/tp );
+    $a = $("#cost_"+id+" th.costdef");
+    $a.text (nn(dm)); $a.next().text (nn(dk)); $a.next().next().text (nn(dd)); $a.next().next().next().text (prc+"%"); $a.next().next().next().next().text ( nn(dp) );
+
+    if (tp == 0) prc = 0;
+    else prc = Math.round ( (fp*100)/tp );
+    $("#cost_"+id+" td.fleetcap").text ( loca['LOCA_SPY_FLEET'] + " ("+nn(fpoints)+")");
+    $a = $("#cost_"+id+" th.costfleet");
+    $a.text (nn(fm)); $a.next().text (nn(fk)); $a.next().next().text (nn(fd)); $a.next().next().next().text (prc+"%"); $a.next().next().next().next().text ( nn(fp) );
+
+    if (tp == 0) prc = 0;
+    else prc = Math.round ( ((tp-rp)*100)/tp );
+    $a = $("#cost_"+id+" th.costtotal");
+    $a.text (nn(tm-rm)); $a.next().text (nn(tk-rk)); $a.next().next().text (nn(td-rd)); $a.next().next().next().text (prc+"%"); $a.next().next().next().next().text ( nn(tp-rp) );
+
+    if (tp == 0) prc = 0;
+    else prc = Math.round ( (rp*100)/tp );
+    $("#cost_"+id+" td.rescap").text ( loca['LOCA_SPY_RESEARCH'] + " ("+nn(respoints)+")");
+    $a = $("#cost_"+id+" th.costres");
+    $a.text (nn(rm)); $a.next().text (nn(rk)); $a.next().next().text (nn(rd)); $a.next().next().next().text (prc+"%"); $a.next().next().next().next().text ( nn(rp) );
+
+    for ( var str in loca ) {     // перевод строк
+        $("span."+str).text (loca[str]);
+    }
+}
+
+// Обработчик нажатия на закладку.
+function TabOnSelect (event, ui)
+{
+    var html = $(ui.panel).html();
+    var match = html.match('planetid="([0-9]+)');
+    var planetid = match[1];
+
+    SelectedPlanet = planetid;
+    InitPrices ( planetid );
+    RecalcProduction (planetid);
+    RecalcCost (planetid);
+}
+
+// Ограничение уровней объектов.
+function LevelLimit (obj, level)
+{
+    if (level < 0) return 0;
+    if ((obj == 407 || obj == 408) && (level > 0)) return 1;    // Купола.
+    return level;
+}
+
+// Обработчик поля ввода объекта.
+function ObjOnFocusOut ()
+{
+    var text = $(this).attr ("class");
+    var match = text.match('objedit([0-9]+)');
+    var obj = toint (match[1]);
+    var lvl = toint ($(this).val ());
+    lvl = LevelLimit (obj, lvl);
+    $(this).val (lvl);
+    if ( isresearch(obj) ) GlobalResearch[obj] = lvl;
+    else plist["p"+SelectedPlanet+"_"+obj] = lvl;
+
+    // Если на одной вкладке изменилось Исследование, то применить это ко всем остальным вкладкам.
+    if ( isresearch (obj) ) {
+        for (i=0; i<pnum; i++) $("div[planetid='"+i+"'] input.objedit"+obj).val (toint(GlobalResearch[obj]));
+    }
+
+    // Обновить расширенную информацию некоторых тултипов.
+    if ( obj == 117) {    // МПР.
+        for (i=0; i<pnum; i++) ForceUpdateTooltip (i, 117);
+        for (i=0; i<pnum; i++) ForceUpdateTooltip (i, 503);
+    }
+    else if (obj == 124)  {   // Астрофизика.
+        for (i=0; i<pnum; i++) ForceUpdateTooltip (i, 124);
+    }
+    else if (obj == 1 || obj == 2 || obj == 3 || obj == 4 || obj == 12 || obj == 212 || obj == 113 || obj == 122)  {   // Производство
+        for (i=0; i<pnum; i++) ForceUpdateTooltip (i, 1);
+        for (i=0; i<pnum; i++) ForceUpdateTooltip (i, 2);
+        for (i=0; i<pnum; i++) ForceUpdateTooltip (i, 3);
+        for (i=0; i<pnum; i++) ForceUpdateTooltip (i, 4);
+        for (i=0; i<pnum; i++) ForceUpdateTooltip (i, 12);
+        for (i=0; i<pnum; i++) ForceUpdateTooltip (i, 212);
+        for (i=0; i<pnum; i++) ForceUpdateTooltip (i, 113);
+        for (i=0; i<pnum; i++) ForceUpdateTooltip (i, 122);
+    }
+    else if (obj == 22) ForceUpdateTooltip (SelectedPlanet, 22);    // Хранилища.
+    else if (obj == 23) ForceUpdateTooltip (SelectedPlanet, 23);
+    else if (obj == 24) ForceUpdateTooltip (SelectedPlanet, 24);
+    else if ( isfleet (obj) ) ForceUpdateTooltip (SelectedPlanet, obj); // Флот.
+
+    Recalc ();
+    RecalcProduction (SelectedPlanet);
+    RecalcCost (SelectedPlanet);
+    UpdatePermalink ();
+}
+
+// Нажатие на картинку объекта.
+function ObjOnClick ()
+{
+    var text = $(this).attr ("class");
+    var match = text.match('objpic([0-9]+)');
+    var obj = parseInt(match[1]);
+    if ( isresearch(obj) ) lvl = toint ( GlobalResearch[obj] );
+    else lvl = toint (plist["p"+SelectedPlanet+"_"+obj]);
+    $("#price_obj").val (obj);
+    $("#price_lvl").val (lvl);
+    Recalc ();
+}
+
+// Поле ввода имени планеты.
+function PlanetNameChange ()
+{
+    plist["p"+SelectedPlanet+"_n"] = $(this).val ();
+    var selected = $tabs.tabs( "option", "selected" );
+    if (selected == -1) selected = 0;
+    if (plist["p"+SelectedPlanet+"_m"]) $('#full_content .ui-tabs-nav li:eq('+selected+') a').text( $(this).val () + " (Луна)"); 
+    else $('#full_content .ui-tabs-nav li:eq('+selected+') a').text( $(this).val () ); 
+    UpdatePermalink ()
+}
+
+// Поле ввода максимальной температуры.
+function PlanetMaxTempChange ()
+{
+    plist["p"+SelectedPlanet+"_t"] = $(this).val ();
+    RecalcProduction (SelectedPlanet);
+    RecalcCost (SelectedPlanet);
+    UpdatePermalink ()
+}
+
+function GenObj (id, lvl, delta)
+{
+    var res = "";
+    var editsize = 2;
+    if (id > 200) editsize+=4;
+    {
+        var ti;
+        if (isfleet(id)) ti = 100 + (id - 200);
+        else if (isdefense(id)) ti = 200 + (id - 400);
+        else if (isresearch(id)) ti = 500 + (id - 100);
+        else ti = id;
+
+        if (isfleet(id) || isdefense(id)) { 
+            res += "<td><table width=\"180px\"><tr>\n";
+            res += "<td><nobr class=\"objpic"+id+"\" updated=\"0\">"+shorten(TechNames[id], 18)+"</nobr></td><td align=right><input class=\"objedit"+id+" ui-state-default ui-corner-all centered\" size=\""+editsize+"\" value=\""+toint(lvl)+"\" tabindex=\""+ti+"\">\n";
+        }
+        else {
+            res += "<td><table width=\"190px\"><tr>\n";
+            res += "<td><nobr class=\"objpic"+id+"\" updated=\"0\">"+shorten(TechNames[id], 22)+"</nobr></td><td align=right><input class=\"objedit"+id+" ui-state-default ui-corner-all centered\" size=\""+editsize+"\" value=\""+toint(lvl)+"\" tabindex=\""+ti+"\">\n";
+        }
+    }
+    if (delta > 0) res += "<font color=\"lime\"><b>+"+delta+"</b></font>\n";
+    else if (delta < 0) res += "<font color=\"red\"><b>-"+delta+"</b></font>\n";
+    res += "</td>\n";
+    res += "</tr></table></td>\n";
+    return res;
+}
+
+function GenPlanetTab (id)
+{
+    var html = "";
+    var p = "p"+id+"_";
+    var resources = [ 1, 2, 3, 4, 12, 22, 23, 24 ];
+    var stations = [ 14, 21, 31, 34, 44, 15, 33 ];
+    var m_resources = [ 22, 23, 24 ];
+    var m_stations = [ 14, 21, 41, 42, 43 ]
+    var research1 = [ 113, 120, 121, 114, 122, 115, 117, 118 ];
+    var research2 = [ 106, 108, 124, 123, 199, 111, 109, 110 ];
+    var fleet1 = [ 204, 205, 206, 207, 202, 203, 208 ];
+    var fleet2 = [ 215, 211, 213, 214, 209, 210, 212 ];
+    var def1 = [ 401, 402, 403, 404, 405, 406 ];
+    var def2 = [ 407, 408, 502, 503 ];
+
+    // Для упрощенного вида.
+    var s_buildings = [ 1, 2, 3, 4, 12, 14, 15, 21, 22, 23, 24, 31, 33, 34, 44 ];
+    var s_m_buildings = [ 14, 21, 22, 23, 24, 41, 42, 43 ];
+    var s_research = [ 106, 108, 109, 110, 111, 113, 114, 115, 117, 118, 120, 121, 122, 123, 124, 199 ];
+    var s_fleet = [ 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215 ];
+    var s_defense = [ 401, 402, 403, 404, 405, 406, 407, 408, 502, 503 ];
+
+    html += "<div planetid=\""+id+"\">";
+    html += "<table cellpadding=\"0\" ><tr><td>";
+
+    // ----------------- Постройки, оборона, флот и исследования.
+
+    html += "<table class=\"ui-widget-content ui-corner-all\" cellpadding=\"0\" cellspacing=\"0\">\n";
+
+    {    // Упрощенный Вид.
+        html += "<tr>     <th><div align=left><span class=\"LOCA_SPY_BUILDINGS\">Постройки</span></div></th> <th><div align=left><span class=\"LOCA_SPY_FLEET\">Флот</span></div></th> <th><div align=left><span class=\"LOCA_SPY_DEFENSE\">Оборона</span></div></th> <th><div align=left><span class=\"LOCA_SPY_RESEARCH\">Исследования</span></div></th></tr>\n";
+        for ( i in s_research) {
+            html += "<tr>";
+            if ( toint(plist[p+"m"]) ) {
+                if(s_m_buildings[i]) html += GenObj (s_m_buildings[i], plist[p+s_m_buildings[i]], 0);
+                else html += "<td>&nbsp;</td>";
+            }
+            else {
+                if(s_buildings[i]) html += GenObj (s_buildings[i], plist[p+s_buildings[i]], 0);
+                else html += "<td>&nbsp;</td>";
+            }
+            if(s_fleet[i]) html += GenObj (s_fleet[i], plist[p+s_fleet[i]], 0);
+            else html += "<td>&nbsp;</td>";
+            if(s_defense[i]) html += GenObj (s_defense[i], plist[p+s_defense[i]], 0);
+            else html += "<td>&nbsp;</td>";
+            if(s_research[i]) html += GenObj (s_research[i], plist[p+s_research[i]], 0);
+            else html += "<td>&nbsp;</td>";
+            html += "</tr>";
+        }
+    }
+
+    html += "</table></td>";
+
+    html += "<td style=\"vertical-align: top;\"><table>";
+    // ----------------- Параметры планеты
+    html += "<tr><td><div id=\"prop_"+id+"\"><table>";
+    html += "<tr><td><span class=\"LOCA_PNAME\">Название</span> &nbsp;<input type=\"text\" class=\"pname ui-state-default ui-corner-all\" size=\"16\" value=\""+plist[p+"n"]+"\"></td></tr>";
+    html += "<tr><td><span class=\"LOCA_MAXTEMP\">Максимальная температура</span> <input type=\"text\" class=\"maxtemp ui-state-default ui-corner-all centered\" size=\"4\" value=\""+toint(plist[p+"t"])+"\"></td></tr>";
+    html += "</table></div></td></tr>";
+
+    // ----------------- Произодство
+    html += "<tr><td><div id=\"prod_"+id+"\" class=\"ui-widget-content ui-corner-all\">";
+    html += "<table cellspacing=\"0\">";
+    html += "<tr><td  colspan=2 class='ui-widget-header'><span class=\"prod_head\">Производство</span></td><td class='ui-widget-header'><nobr><span class=\"LOCA_PER_HOUR\">В час</span></nobr></td><td class='ui-widget-header'><nobr><span class=\"LOCA_PER_DAY\">В день</span></nobr></td><td class='ui-widget-header'><nobr><span class=\"LOCA_PER_WEEK\">В неделю</span></nobr></td><td class='ui-widget-header'>%</td><td class='ui-widget-header'><nobr><span class=\"LOCA_BOOSTER\">Бустер</span></nobr></td><td class='ui-widget-header'><nobr>";
+    html += " <span class=\"LOCA_E\">Энергия</span></nobr></td></tr>";
+    html += "<tr><td colspan=2><nobr>";
+    html += " <span class=\"prod_m\">Рудник по добыче металла (20)</span></nobr></td><th class=\"mh\">123</th><th>122323</th><th>134534523</th><th>";
+    html += "<select class=\"prc_m\" onchange=\"RecalcProduction("+id+");\">";
+    html += "<option value=\"1.0\" SELECTED>100%</option><option value=\"0.9\">90%</option><option value=\"0.8\">80%</option><option value=\"0.7\">70%</option><option value=\"0.6\">60%</option><option value=\"0.5\">50%</option><option value=\"0.4\">40%</option><option value=\"0.3\">30%</option><option value=\"0.2\">20%</option><option value=\"0.1\">10%</option><option value=\"0\">0%</option>";
+    html += "</select>";
+    html += "</th><th>";
+    html += "<select class=\"boost_m\" onchange=\"RecalcProduction("+id+");\"><option value=\"0\" SELECTED>"+loca['LOCA_NO']+"</option><option value=\"0.1\">10%</option><option value=\"0.2\">20%</option><option value=\"0.3\">30%</option></select>";
+    html += "</th><th class=\"me\">-1123</th></tr>";
+    html += "<tr><td colspan=2><nobr>";
+    html += " <span class=\"prod_k\">Рудник по добыче кристалла (10)</span></nobr></td><th class=\"kh\">323</th><th>144423</th><th>134534523</th><th>";
+    html += "<select class=\"prc_k\" onchange=\"RecalcProduction("+id+");\">";
+    html += "<option value=\"1.0\" SELECTED>100%</option><option value=\"0.9\">90%</option><option value=\"0.8\">80%</option><option value=\"0.7\">70%</option><option value=\"0.6\">60%</option><option value=\"0.5\">50%</option><option value=\"0.4\">40%</option><option value=\"0.3\">30%</option><option value=\"0.2\">20%</option><option value=\"0.1\">10%</option><option value=\"0\">0%</option>";
+    html += "</select>";
+    html += "</th><th>";
+    html += "<select class=\"boost_k\" onchange=\"RecalcProduction("+id+");\"><option value=\"0\" SELECTED>"+loca['LOCA_NO']+"</option><option value=\"0.1\">10%</option><option value=\"0.2\">20%</option><option value=\"0.3\">30%</option></select>";
+    html += "</th><th class=\"ke\">-1123</th></tr>";
+    html += "<tr><td colspan=2><nobr>";
+    html += " <span class=\"prod_d\">Синтезатор дейтерия (15)</span></nobr></td><th class=\"dh\">123</th><th>12233</th><th>1353423</th><th>";
+    html += "<select class=\"prc_d\" onchange=\"RecalcProduction("+id+");\">";
+    html += "<option value=\"1.0\" SELECTED>100%</option><option value=\"0.9\">90%</option><option value=\"0.8\">80%</option><option value=\"0.7\">70%</option><option value=\"0.6\">60%</option><option value=\"0.5\">50%</option><option value=\"0.4\">40%</option><option value=\"0.3\">30%</option><option value=\"0.2\">20%</option><option value=\"0.1\">10%</option><option value=\"0\">0%</option>";
+    html += "</select>";
+    html += "</th><th>";
+    html += "<select class=\"boost_d\" onchange=\"RecalcProduction("+id+");\"><option value=\"0\" SELECTED>"+loca['LOCA_NO']+"</option><option value=\"0.1\">10%</option><option value=\"0.2\">20%</option><option value=\"0.3\">30%</option></select>";
+    html += "</th><th class=\"de\">-1123</th></tr>";
+    html += "<tr><td colspan=8><hr/></td></tr>";
+    html += "<tr><td colspan=2><nobr><span class=\"prod_e\">Солнечная электростанция (15)</span></nobr></td><th></th><th></th><th></th><th>";
+    html += "<select class=\"prc_e\" onchange=\"RecalcProduction("+id+");\">";
+    html += "<option value=\"1.0\" SELECTED>100%</option><option value=\"0.9\">90%</option><option value=\"0.8\">80%</option><option value=\"0.7\">70%</option><option value=\"0.6\">60%</option><option value=\"0.5\">50%</option><option value=\"0.4\">40%</option><option value=\"0.3\">30%</option><option value=\"0.2\">20%</option><option value=\"0.1\">10%</option><option value=\"0\">0%</option>";
+    html += "</select>";
+    html += "</th><th>&nbsp;</th><th class=\"ee\">1123</th></tr>";
+    html += "<tr><td colspan=2><nobr><span class=\"prod_f\">Теромядерная электростанция (10)</span></nobr></td><th class=\"fh\">-122</th><th>-1222</th><th>-12222</th><th>";
+    html += "<select class=\"prc_f\" onchange=\"RecalcProduction("+id+");\">";
+    html += "<option value=\"1.0\" SELECTED>100%</option><option value=\"0.9\">90%</option><option value=\"0.8\">80%</option><option value=\"0.7\">70%</option><option value=\"0.6\">60%</option><option value=\"0.5\">50%</option><option value=\"0.4\">40%</option><option value=\"0.3\">30%</option><option value=\"0.2\">20%</option><option value=\"0.1\">10%</option><option value=\"0\">0%</option>";
+    html += "</select>";
+    html += "</th><th>&nbsp;</th><th class=\"fe\">2123</th></tr>";
+    html += "<tr><td colspan=2><nobr><span class=\"prod_sat\">Солнечный спутник (20)</span></nobr></td><th></th><th></th><th></th><th>";
+    html += "<select class=\"prc_s\" onchange=\"RecalcProduction("+id+");\">";
+    html += "<option value=\"1.0\" SELECTED>100%</option><option value=\"0.9\">90%</option><option value=\"0.8\">80%</option><option value=\"0.7\">70%</option><option value=\"0.6\">60%</option><option value=\"0.5\">50%</option><option value=\"0.4\">40%</option><option value=\"0.3\">30%</option><option value=\"0.2\">20%</option><option value=\"0.1\">10%</option><option value=\"0\">0%</option>";
+    html += "</select>";
+    html += "</th><th>&nbsp;</th><th class=\"se\">1123</th></tr>";
+    html += "<tr><td colspan=2><span class=\"prod_total\"><span class=\"LOCA_BALANCE\">Баланс</span></span></td><th></th><th></th><th></th><th></th><th>&nbsp;</td><th class=\"e_total\"><font color=\"red\">-1123</font></th></tr>";
+    html += "</table>";
+    html += "</div></td></tr>";
+
+    // ----------------- Стоимость
+    html += "<tr><td><div id=\"cost_"+id+"\" class=\"ui-widget-content ui-corner-all\">";
+    html += "<table cellspacing=\"0\" width=\"100%\">";
+    html += "<tr><td class='ui-widget-header'><span class=\"LOCA_COST\">Стоимость</span></td><td class='ui-widget-header'>";
+    html += " "+loca['LOCA_M']+"</td>";
+    html += "    <td class='ui-widget-header'>";
+    html += " "+loca['LOCA_K']+"</td>";
+    html += "    <td class='ui-widget-header'>";
+    html += " "+loca['LOCA_D']+"</td>";
+    html += "    <td class='ui-widget-header'> %</td><td class='ui-widget-header' colspan=2><span class=\"LOCA_POINTS\">Очки</span></td></tr>";
+    html += "<tr><td> <span class=\"LOCA_SPY_MINES\">Шахты</span></td><th class=\"costmines\">123</th><th>123</th><th>123</th><th>12%</th><th>123123</th></tr>";
+    html += "<tr><td> <span class=\"LOCA_SPY_BUILDINGS\">Постройки</span></td><th class=\"costbuilding\">123</th><th>123</th><th>123</th><th>12%</th><th>123123</th></tr>";
+    html += "<tr><td> <span class=\"LOCA_SPY_DEFENSE\">Оборона</span></td><th class=\"costdef\">123</th><th>123</th><th>123</th><th>12%</th><th>123123</th></tr>";
+    html += "<tr><td class=\"fleetcap\"> Флот (32.221)</td><th class=\"costfleet\">123</th><th>123</th><th>123</th><th>12%</th><th>123123</th></tr>";
+    html += "<tr><td colspan=6><hr/></td></tr>";
+    html += "<tr><td><span class=\"woresearch\"><span class=\"LOCA_TOTAL\">Всего</span></span></td><th class=\"costtotal\">123123</th><th>12312312</th><th>1231231</th><th>88%</th><th>1.123.234</th></tr>";
+    html += "<tr><td class=\"rescap\"> Исследования (123)</td><th class=\"costres\">123</th><th>123</th><th>123</th><th>12%</th><th>123123</th></tr>";
+    html += "</table>";
+    html += "</div></td></tr>";
+
+    html += "</table></td>";
+
+    html += "</tr></table>";
+    html += "</div>";
+
+    return html;
+}
+
+// --------------- Расчёт стоимости -------------------------
+
+// Таблица стоимости 1-го уровня.
+var PriceTab = new Array ();
+for (var n in TechNames) PriceTab[n] = new Array ();
+
+// Постройки.
+PriceTab[14]['m'] = 400; PriceTab[14]['k'] = 120; PriceTab[14]['d'] = 200; PriceTab[14]['e'] = 0;
+PriceTab[15]['m'] = 1000000; PriceTab[15]['k'] = 500000; PriceTab[15]['d'] = 100000; PriceTab[15]['e'] = 0;
+PriceTab[21]['m'] = 400; PriceTab[21]['k'] = 200; PriceTab[21]['d'] = 100; PriceTab[21]['e'] = 0;
+PriceTab[22]['m'] = 2000; PriceTab[22]['k'] = 0; PriceTab[22]['d'] = 0; PriceTab[22]['e'] = 0;
+PriceTab[23]['m'] = 2000; PriceTab[23]['k'] = 1000; PriceTab[23]['d'] = 0; PriceTab[23]['e'] = 0;
+PriceTab[24]['m'] = 2000; PriceTab[24]['k'] = 2000; PriceTab[24]['d'] = 0; PriceTab[24]['e'] = 0;
+PriceTab[31]['m'] = 200; PriceTab[31]['k'] = 400; PriceTab[31]['d'] = 200; PriceTab[31]['e'] = 0;
+PriceTab[33]['m'] = 0; PriceTab[33]['k'] = 50000; PriceTab[33]['d'] = 100000; PriceTab[33]['e'] = 1000;
+PriceTab[34]['m'] = 20000; PriceTab[34]['k'] = 40000; PriceTab[34]['d'] = 0; PriceTab[34]['e'] = 0;
+PriceTab[44]['m'] = 20000; PriceTab[44]['k'] = 20000; PriceTab[44]['d'] = 1000; PriceTab[44]['e'] = 0;
+// Луна
+PriceTab[41]['m'] = 20000; PriceTab[41]['k'] = 40000; PriceTab[41]['d'] = 20000; PriceTab[41]['e'] = 0;
+PriceTab[42]['m'] = 20000; PriceTab[42]['k'] = 40000; PriceTab[42]['d'] = 20000; PriceTab[42]['e'] = 0;
+PriceTab[43]['m'] = 2000000; PriceTab[43]['k'] = 4000000; PriceTab[43]['d'] = 2000000; PriceTab[43]['e'] = 0;
+
+// Флот
+PriceTab[202]['m'] = 2000; PriceTab[202]['k'] = 2000; PriceTab[202]['d'] = 0;
+PriceTab[203]['m'] = 6000; PriceTab[203]['k'] = 6000; PriceTab[203]['d'] = 0;
+PriceTab[204]['m'] = 3000; PriceTab[204]['k'] = 1000; PriceTab[204]['d'] = 0;
+PriceTab[205]['m'] = 6000; PriceTab[205]['k'] = 4000; PriceTab[205]['d'] = 0;
+PriceTab[206]['m'] = 20000; PriceTab[206]['k'] = 7000; PriceTab[206]['d'] = 2000;
+PriceTab[207]['m'] = 45000; PriceTab[207]['k'] = 15000; PriceTab[207]['d'] = 0;
+PriceTab[208]['m'] = 10000; PriceTab[208]['k'] = 20000; PriceTab[208]['d'] = 10000;
+PriceTab[209]['m'] = 10000; PriceTab[209]['k'] = 6000; PriceTab[209]['d'] = 2000;
+PriceTab[210]['m'] = 0; PriceTab[210]['k'] = 1000; PriceTab[210]['d'] = 0;
+PriceTab[211]['m'] = 50000; PriceTab[211]['k'] = 25000; PriceTab[211]['d'] = 15000;
+PriceTab[212]['m'] = 0; PriceTab[212]['k'] = 2000; PriceTab[212]['d'] = 500;
+PriceTab[213]['m'] = 60000; PriceTab[213]['k'] = 50000; PriceTab[213]['d'] = 15000;
+PriceTab[214]['m'] = 5000000; PriceTab[214]['k'] = 4000000; PriceTab[214]['d'] =1000000;
+PriceTab[215]['m'] = 30000; PriceTab[215]['k'] = 40000; PriceTab[215]['d'] = 15000;
+
+// Оборона.
+PriceTab[401]['m'] = 2000; PriceTab[401]['k'] = 0; PriceTab[401]['d'] = 0;
+PriceTab[402]['m'] = 1500; PriceTab[402]['k'] = 500; PriceTab[402]['d'] = 0;
+PriceTab[403]['m'] = 6000; PriceTab[403]['k'] = 2000; PriceTab[403]['d'] = 0;
+PriceTab[404]['m'] = 20000; PriceTab[404]['k'] = 15000; PriceTab[404]['d'] = 2000;
+PriceTab[405]['m'] = 2000; PriceTab[405]['k'] = 6000; PriceTab[405]['d'] = 0;
+PriceTab[406]['m'] = 50000; PriceTab[406]['k'] = 50000; PriceTab[406]['d'] = 30000;
+PriceTab[407]['m'] = 10000; PriceTab[407]['k'] = 10000; PriceTab[407]['d'] = 0;
+PriceTab[408]['m'] = 50000; PriceTab[408]['k'] = 50000; PriceTab[408]['d'] = 0;
+PriceTab[502]['m'] = 8000; PriceTab[502]['k'] = 0; PriceTab[502]['d'] = 2000;
+PriceTab[503]['m'] = 12500; PriceTab[503]['k'] = 2500; PriceTab[503]['d'] = 10000;
+
+// Исследования.
+PriceTab[106]['m'] = 200; PriceTab[106]['k'] = 1000; PriceTab[106]['d'] = 200; PriceTab[106]['e'] = 0;
+PriceTab[108]['m'] = 0; PriceTab[108]['k'] = 400; PriceTab[108]['d'] = 600; PriceTab[108]['e'] = 0;
+PriceTab[109]['m'] = 800; PriceTab[109]['k'] = 200; PriceTab[109]['d'] = 0; PriceTab[109]['e'] = 0;
+PriceTab[110]['m'] = 200; PriceTab[110]['k'] = 600; PriceTab[110]['d'] = 0; PriceTab[110]['e'] = 0;
+PriceTab[111]['m'] = 1000; PriceTab[111]['k'] = 0; PriceTab[111]['d'] = 0; PriceTab[111]['e'] = 0;
+PriceTab[113]['m'] = 0; PriceTab[113]['k'] = 800; PriceTab[113]['d'] = 400; PriceTab[113]['e'] = 0;
+PriceTab[114]['m'] = 0; PriceTab[114]['k'] = 4000; PriceTab[114]['d'] = 2000; PriceTab[114]['e'] = 0;
+PriceTab[115]['m'] = 400; PriceTab[115]['k'] = 0; PriceTab[115]['d'] = 600; PriceTab[115]['e'] = 0;
+PriceTab[117]['m'] = 2000; PriceTab[117]['k'] = 4000; PriceTab[117]['d'] = 600; PriceTab[117]['e'] = 0;
+PriceTab[118]['m'] = 10000; PriceTab[118]['k'] = 20000; PriceTab[118]['d'] = 6000; PriceTab[118]['e'] = 0;
+PriceTab[120]['m'] = 200; PriceTab[120]['k'] = 100; PriceTab[120]['d'] = 0; PriceTab[120]['e'] = 0;
+PriceTab[121]['m'] = 1000; PriceTab[121]['k'] = 300; PriceTab[121]['d'] = 100; PriceTab[121]['e'] = 0;
+PriceTab[122]['m'] = 2000; PriceTab[122]['k'] = 4000; PriceTab[122]['d'] = 1000; PriceTab[122]['e'] = 0;
+PriceTab[123]['m'] = 240000; PriceTab[123]['k'] = 400000; PriceTab[123]['d'] = 160000; PriceTab[123]['e'] = 0;
+PriceTab[124]['m'] = 4000; PriceTab[124]['k'] = 8000; PriceTab[124]['d'] = 4000; PriceTab[124]['e'] = 0;
+PriceTab[199]['m'] = 0; PriceTab[199]['k'] = 0; PriceTab[199]['d'] = 0; PriceTab[199]['e'] = 300000;
+
+// Требования к уровню лаборатории для исследований.
+var RequireLab = { 106: 3, 108: 1, 109: 4, 110: 6, 111: 2, 113: 1, 114: 7, 115: 1, 117: 2, 118: 7, 120: 1, 121: 4, 122: 4, 123: 10, 124: 3, 199: 12 };
+
+function Recalc ()
+{
+    var from;
+    var planetid = SelectedPlanet;
+    var price_obj = toint ($("#price_obj").val ());
+    var to = LevelLimit (price_obj, toint ($("#price_lvl").val ()));
+    $("#price_lvl").val (to);
+    if (isresearch (price_obj)) from = toint ( GlobalResearch[price_obj] );
+    else from = toint (plist["p"+planetid+"_"+price_obj]);
+    CalcPrice ( parseInt(price_obj), from, to, planetid );
+}
+
+function InitPrices (planetid)
+{
+    var buildings = [ 1, 2, 3, 4, 12, 14, 15, 21, 22, 23, 24, 31, 33, 34, 44 ];
+    var m_buildings = [ 14, 21, 22, 23, 24, 41, 42, 43 ];
+    var research = [ 106, 108, 109, 110, 111, 113, 114, 115, 117, 118, 120, 121, 122, 123, 124, 199 ];
+    var fleet = [ 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215 ];
+    var defense = [ 401, 402, 403, 404, 405, 406, 407, 408, 502, 503 ];
+    var moon = plist["p"+planetid+"_m"];
+
+    var html = "<select id=\"price_obj\" name=\"obj\" style=\"ui-state-default ui-corner-all\">";
+
+    html += "<optgroup label=\""+loca['LOCA_SPY_BUILDINGS']+"\">";
+    if (moon) { for (var i in m_buildings) html += "<option value="+m_buildings[i]+">"+TechNames[m_buildings[i]]+"</option>"; }
+    else { for (var i in buildings) html += "<option value="+buildings[i]+">"+TechNames[buildings[i]]+"</option>"; }
+    html += "</optgroup>";
+
+    html += "<optgroup label=\""+loca['LOCA_SPY_RESEARCH']+"\">";
+    for (var i in research) html += "<option value="+research[i]+">"+TechNames[research[i]]+"</option>";
+    html += "</optgroup>";
+
+    html += "<optgroup label=\""+loca['LOCA_SPY_FLEET']+"\">";
+    for (var i in fleet) html += "<option value="+fleet[i]+">"+TechNames[fleet[i]]+"</option>";
+    html += "</optgroup>";
+
+    html += "<optgroup label=\""+loca['LOCA_SPY_DEFENSE']+"\">";
+    for (var i in defense) html += "<option value="+defense[i]+">"+TechNames[defense[i]]+"</option>";
+    html += "</optgroup>";
+
+    html += "</select>";
+
+    $ ("#prices").empty ();
+    $ ("#prices").append (html);
+
+    $("#prices").change (Recalc);
+    $("#price_lvl").val (0);
+    Recalc ();
+}
+
+// Стоимость объекта. m-k-d-e: металл, кристалл, дейтерий и энергия. Функция возвращает общую стоимость в очках (1000 ед. любого ресурса = 1 очко).
+function ObjPrice (id, level, price)
+{
+    if (level == 0) {
+        price['m'] = price['k'] = price['d'] = price['e'] = 0;        
+    }
+    else if (id >= 202) {        // Флот и Оборона
+        price['m'] = PriceTab[id]['m'] * level;
+        price['k'] = PriceTab[id]['k'] * level;
+        price['d'] = PriceTab[id]['d'] * level;
+        price['e'] = 0;
+    }
+    else if (id == 1) {    // Рудник по добыче металла
+        price['m'] = Math.floor (60 * Math.pow(1.5, level-1));
+        price['k'] = Math.floor (15 * Math.pow(1.5, level-1));
+        price['d'] = price['e'] = 0;
+    }
+    else if (id == 2) {    // Рудник по добыче кристалла
+        price['m'] = Math.floor (48 * Math.pow(1.6, level-1));
+        price['k'] = Math.floor (24 * Math.pow(1.6, level-1));
+        price['d'] = price['e'] = 0;
+    }
+    else if (id == 3) {     // Синтезатор дейтерия
+        price['m'] = Math.floor (225 * Math.pow(1.5, level-1));
+        price['k'] = Math.floor (75 * Math.pow(1.5, level-1));
+        price['d'] = price['e'] = 0;
+    }
+    else if (id == 4) {    // Солнечная электростанция
+        price['m'] = Math.floor (75 * Math.pow(1.5, level-1));
+        price['k'] = Math.floor (30 * Math.pow(1.5, level-1));
+        price['d'] = price['e'] = 0;
+    }
+    else if (id == 12) {    // Термоядерная электростанция
+        price['m'] = Math.floor (900 * Math.pow(1.8, level-1));
+        price['k'] = Math.floor (360 * Math.pow(1.8, level-1));
+        price['d'] = Math.floor (180 * Math.pow(1.8, level-1));
+        price['e'] = 0;
+    }
+    else if (id == 124 && !EmpireConfig['oldver']) {    // Астрофизика
+        price['m'] = 100 * Math.floor ( 0.5 + 40 * Math.pow (1.75, level-1) );
+        price['k'] = 100 * Math.floor ( 0.5 + 80 * Math.pow (1.75, level-1) );
+        price['d'] = 100 * Math.floor ( 0.5 + 40 * Math.pow (1.75, level-1) );
+        price['e'] = 0;
+    }
+    else if (id == 199) {    // Гравитационная технология
+        price['m'] = PriceTab[id]['m'] * Math.pow(3, level-1);
+        price['k'] = PriceTab[id]['k'] * Math.pow(3, level-1);
+        price['d'] = PriceTab[id]['d'] * Math.pow(3, level-1);
+        price['e'] = PriceTab[id]['e'] * Math.pow(3, level-1);
+    }
+    else {    // Остальные Постройки и Исследования
+        price['m'] = PriceTab[id]['m'] * Math.pow(2, level-1);
+        price['k'] = PriceTab[id]['k'] * Math.pow(2, level-1);
+        price['d'] = PriceTab[id]['d'] * Math.pow(2, level-1);
+        price['e'] = PriceTab[id]['e'] * Math.pow(2, level-1);
+    }
+    price['p'] = Math.floor(price['m'] / 1000) + Math.floor(price['k'] / 1000) + Math.floor(price['d'] / 1000);
+}
+
+// Проверить достаточно ли уровня лаборатории для проведения исследования
+function ReslabOperable (level, techid)
+{
+    return level >= RequireLab[techid];
+}
+
+// Присоединить к текущей лаборатории +МИС лабораторий максимального уровня.
+// На выходе общий уровень "виртуальной" лаборатории.
+function ResearchNetwork ( planetid, obj )
+{
+    var ign = GlobalResearch [123];
+    var reslab = toint (plist["p"+planetid+"_31"]);
+    var labs = new Array ();
+    var labnum = 0;
+
+    // Получить все доступные лабы, отсортированные по убыванию.
+    for (i=0; i<pnum; i++) {
+        var p = "p"+i+"_";
+        var level = plist[p+"31"];
+        if ( i == planetid ) continue;
+        if ( !plist[p+"m"] && ReslabOperable (level, obj) ) labs[labnum++] = level;
+    }
+    labs.sort(function(a,b){return b - a});
+
+    // Присоединить +МИС доступных лабораторий.
+    for (i=0; i<ign && i<labnum; i++) reslab += labs[i];
+    return reslab;
+}
+
+// Расчитать стоимость и время от уровня From до уровня To.
+function CalcPrice (obj, from, to, planetid)
+{
+    var price = new Array ();
+    var pm = 0, pk = 0, pd = 0, pe = 0, tm = 0, tk = 0, td = 0, te = 0;
+    var time = 0, totaltime = 0, capone, captotal;
+    var deconstruct = (from > to);
+    var robots = toint (plist["p"+planetid+"_14"]);
+    var nanits = toint (plist["p"+planetid+"_15"]);
+    var shipyard = toint (plist["p"+planetid+"_21"]);
+
+    if ( typeof(planetid) == "undefined") return;
+    dprint ( "CalcPrice " + TechNames[obj] + " " + from + "..." + to + " (planet:" + planetid + ")" );
+
+    if ( isfleet (obj) || isdefense(obj))
+    {
+        if (to <= 0) to = 1;
+        $("#price_lvl").val (to);
+        pm = PriceTab [obj]['m']; pk = PriceTab [obj]['k']; pd = PriceTab [obj]['d']; pe = 0;
+        tm = pm * to; tk = pk * to; td = pd * to; te = 0;
+    }
+    else if ( isresearch (obj) ) {
+        if (to < from) from = 0;
+        if (from == to) from = 0;
+        for (i=from+1; i<=to; i++) {
+            ObjPrice (obj, i, price);
+            pm = price['m']; pk = price['k']; pd = price['d']; pe = price['e']; 
+            tm += price['m']; tk += price['k']; td += price['d']; te += price['e']; 
+        }
+    }
+    else {
+        if ( deconstruct ) {    // Снос
+        }
+        else      // Строительство
+        {
+            if (from == to) from = 0;
+            for (i=from+1; i<=to; i++) {
+                ObjPrice (obj, i, price);
+                pm = price['m']; pk = price['k']; pd = price['d']; pe = price['e']; 
+                tm += price['m']; tk += price['k']; td += price['d']; te += price['e'];
+            }
+        }
+    }
+
+    // Расчёт времени
+    if ( isfleet (obj) || isdefense(obj) )     // Флот и оборона
+    {
+        time = ( (pm + pk) / (2500 * (1 + shipyard)) ) * Math.pow (0.5, nanits) * 60*60;
+        totaltime = ( (tm + tk) / (2500 * (1 + shipyard)) ) * Math.pow (0.5, nanits) * 60*60;
+        capone = "1";
+        captotal = to;
+    }
+    else if ( isresearch (obj) )    // Исследования
+    {
+        var reslab = ResearchNetwork ( planetid, obj );
+        hrs = (pm + pk) / (1000 * (1 + reslab)) ;
+        totalhrs =  (tm + tk) / (1000 * (1 + reslab));
+        time = Math.floor(hrs *60*60);
+        totaltime = Math.floor(totalhrs *60*60);
+        if ( EmpireConfig['technocrate'] ) {
+            time -= time * 0.25;
+            totaltime -= totaltime * 0.25;
+        }
+        if ( obj == 199)  { // Грава исследуется за секунду.
+            time = 1;
+            totaltime = time * (to - from);
+        }
+        capone = to;
+        captotal = (from+1) + "..." + to;
+    }
+    else    // Постройки
+    {
+        time = ( (pm + pk) / (2500 * (1 + robots)) ) * Math.pow (0.5, nanits) * 60*60;
+        totaltime = ( (tm + tk) / (2500 * (1 + robots)) ) * Math.pow (0.5, nanits) * 60*60;
+        capone = to;
+        captotal = (from+1) + "..." + to;
+    }
+
+    time /= EmpireConfig['xspeed'];
+    totaltime /= EmpireConfig['xspeed'];
+
+    $("#price_m").text ( nn (pm) ); $("#price_k").text ( nn (pk) ); $("#price_d").text ( nn (pd) ); $("#price_e").text ( nn (pe) );
+    $("#price_tm").text ( nn (tm) ); $("#price_tk").text ( nn (tk) ); $("#price_td").text ( nn (td) ); $("#price_te").text ( nn (te) );
+    $("#cargo_s").text ( nn( Math.ceil((pm+pk+pd)/5000)) ); $("#cargo_l").text ( nn( Math.ceil((pm+pk+pd)/25000)) );
+    $("#cargo_ts").text ( nn( Math.ceil((tm+tk+td)/5000)) ); $("#cargo_tl").text ( nn( Math.ceil((tm+tk+td)/25000)) );
+
+    $("#price_cap1").html ("<span class=\"LOCA_COST\">Стоимость</span> ["+capone+"]");
+    $("#price_cap2").html ("<span class=\"LOCA_FULL_COST\">Полная стоимость</span> ["+captotal+"]");
+    $("#time_cap1").html ("<span class=\"LOCA_TIME\">Время</span> ["+capone+"]");
+    $("#time_cap2").html ("<span class=\"LOCA_FULL_TIME\">Полное время</span> ["+captotal+"]");
+    $("#time_lvl").text ( TimeFormat (time) );
+    $("#time_total").text ( TimeFormat (totaltime) );
+
+    for ( var str in loca ) {     // перевод строк
+        $("span."+str).text (loca[str]);
+    }
+}
+
+// Выработка
+function prod_metal (lvl, pr) { return Math.floor (30 * lvl * Math.pow (1.1, lvl) * pr); }
+function prod_crys (lvl, pr) { return Math.floor (20 * lvl * Math.pow (1.1, lvl) * pr); }
+function prod_deut (lvl, maxtemp, pr) {
+    if ( EmpireConfig['oldver'] ) return Math.floor (10 * lvl * Math.pow (1.1, lvl) * pr) * (1.28 - 0.002 * maxtemp) ;
+    else return Math.floor (10 * lvl * Math.pow (1.1, lvl) * pr) * (1.44 - 0.004 * maxtemp) ;
+}
+function prod_solar (lvl, pr) { return Math.floor (20 * lvl * Math.pow (1.1, lvl) * pr); }
+function prod_fusion (lvl, energo, pr) { return Math.floor (30 * lvl * Math.pow (1.05 + energo*0.01, lvl) * pr); }
+function prod_sat (maxtemp) {
+    if ( EmpireConfig['oldver'] ) return Math.min (50, Math.floor ((maxtemp / 4) + 20) );
+    else return Math.floor ((maxtemp+140)/6);
+}
+
+// Потребление
+function cons_metal (lvl) { return Math.ceil (10 * lvl * Math.pow (1.1, lvl)); }
+function cons_crys (lvl) { return Math.ceil (10 * lvl * Math.pow (1.1, lvl)); }
+function cons_deut (lvl) { return Math.ceil (20 * lvl * Math.pow (1.1, lvl)); }
+function cons_fusion (lvl, pr) { return Math.ceil (10 * lvl * Math.pow (1.1, lvl) * pr); }
+
+// Вместимость хранилищ
+function store_capacity (lvl) {
+    if ( EmpireConfig['oldver'] ) return 100000 + 50000 * (Math.ceil (Math.pow (1.6, lvl) - 1));
+    else return Math.floor (2.5 * Math.pow (Math.E, 20 * lvl / 33)) * 5000;
+}
+
+// Расчет количества рабов.
+function recycles_need (met, crys) { return Math.ceil ((met + crys) / 20000); }
+
+// --------------- Обработка и создание постоянной ссылки -------------------------
+
+function ParsePermalink ()
+{
+    var paramlist = [ 1, 2, 3, 4, 12, 14, 15, 21, 22, 23, 24, 31, 33, 34, 44, 41, 42, 43,
+                             202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215,
+                             401, 402, 403, 404, 405, 406, 407, 408, 502, 503,
+                             106, 108, 109, 110, 111, 113, 114, 115, 117, 118, 120, 121, 122, 123, 124, 199 ];
+    var pn = getParam ("pnum");
+
+    if ( pn ) {
+        var spy = new Array ();
+        for (var i=0; i<pn; i++) {
+            for (var n in paramlist) { 
+                if ( isresearch(paramlist[n]) ) spy['o'+paramlist[n]] = toint (getParam ("r"+paramlist[n]));
+                else spy['o'+paramlist[n]] = toint (getParam ("p"+i+"_"+paramlist[n]));
+            }
+            spy['moon'] = toint (getParam ("p"+i+"_m"));
+            spy['planet'] = decodeURIComponent(getParam ("p"+i+"_n").replace(/\+/g,  " "));
+            spy['temp'] = toint (getParam ("p"+i+"_t"));
+            spy['level'] = 4;
+            AddPlanetFromReport (spy);
+        }
+        SelectedPlanet = $tabs.tabs( "option", "selected" );
+        if (SelectedPlanet == -1) SelectedPlanet = 0;
+        InitPrices ( SelectedPlanet );
+        RecalcProduction (SelectedPlanet);
+        RecalcCost (SelectedPlanet);
+    }
+    else {
+        // Если в ссылке нет планет, то добавить одну планету-пустышку.
+        AddPlanet (0);
+        InitPrices (0);
+        SelectedPlanet = 0;
+        UpdatePermalink ();
+    }
+}
+
+function UpdatePermalink ()
+{
+    var paramlist = [ 1, 2, 3, 4, 12, 14, 15, 21, 22, 23, 24, 31, 33, 34, 44, 41, 42, 43,
+                             202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215,
+                             401, 402, 403, 404, 405, 406, 407, 408, 502, 503, 
+                              "m", "t" ];
+    var research = [ 106, 108, 109, 110, 111, 113, 114, 115, 117, 118, 120, 121, 122, 123, 124, 199 ];
+
+    var url = document.location.pathname + "?" + "pnum=" + pnum;
+    for (p=0; p<pnum; p++) {
+        for (var i in paramlist) url += "&p"+p+"_"+paramlist[i]+"="+toint(plist["p"+p+"_"+paramlist[i]]);
+        url += "&p"+p+"_n="+plist["p"+p+"_n"];
+    }
+    for (var i in research) url += "&r"+research[i]+"="+toint(GlobalResearch[research[i]]);
+    $("a#permalink").attr("href", url);
+    dprint ( "UpdatePermalink" );
+}
+
+// --------------- Обработка шпионских докладов -------------------------
+
+function ParseSpyReport (s)
+{
+    var res = "";
+    var fleetmap = new Array (202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215 );
+    var defmap = new Array (401, 402, 403, 404, 405, 406, 407, 408, 502, 503 );
+    var buildmap = new Array (1, 2, 3, 4, 12, 14, 15, 21, 22, 23, 24, 31, 33, 34, 41, 42, 43, 44);
+    var techmap = new Array (106, 108, 109, 110, 111, 113, 114, 115, 117, 118, 120, 121, 122, 123, 124, 199);
+    var leveldesc = new Array ( loca["LOCA_SPY_FLEET"], loca["LOCA_SPY_DEFENSE"], loca["LOCA_SPY_BUILDINGS"], loca["LOCA_SPY_RESEARCH"] );
+    var map = new Array ( fleetmap, defmap, buildmap, techmap );
+    var spy = new Array ();
+
+    s = php_str_replace (":", " ", s);
+    s = php_str_replace (".", "", s);
+    spy['counter'] = spy['level'] = 0;
+
+    pos = s.indexOf ( loca["LOCA_SPY_RESON"] );
+    if ( pos == -1 ) return undefined;
+    s = s.substr ( pos );
+
+    // Заголовок доклада
+    matchtab = s.match ( "("+loca["LOCA_SPY_RESON"]+"[\\s]+)([\\w|\\s|\\W]+)([\\[])([0-9]) ([0-9]{1,3}) ([0-9]{1,})([\\]]) ([\\(])"+loca["LOCA_SPY_PLAYER"]+" '(([\\w|\\s|\\W]+))'([\\)])" );
+    arr = jQuery.makeArray (matchtab);
+    pname = jQuery.trim(arr[2]);
+    pos = pname.indexOf ("("+loca["LOCA_SPY_MOON"]+")");
+    if (pos != -1) {
+        pname = jQuery.trim(pname.substr (0, pos));
+        spy['moon'] = 1;
+    }
+    else spy['moon'] = 0;
+    spy['planet'] = pname;
+    spy['player'] = arr[9];
+    spy['g'] = parseInt(arr[4]); spy['s'] = parseInt(arr[5]); spy['p'] = parseInt(arr[6]);
+
+    // Флот, оборона, постройки, исследования. Не пытайтесь понять этот цикл.
+    for (level=1; level<=4; level++)   {
+        tab = map[level-1];
+        if ( s.indexOf ( leveldesc[level-1] ) == -1) break;
+        for (var i in map[level-1])
+        {
+            pos = s.indexOf ( TechNames[map[level-1][i]] ); obj = s.substr ( pos );
+            matchtab = obj.match ("("+TechNames[map[level-1][i]]+"[\\s]+)([0-9]{1,})");
+            arr = jQuery.makeArray (matchtab);
+            if ( typeof (arr[2]) == "undefined" ) value = 0;
+            else value = parseInt (arr[2]);
+            spy['o'+map[level-1][i]] = value;
+        }
+        spy['level']++;
+    }
+    for (level; level<=4; level++)   {    // Остаток заполнить нулями.
+        tab = map[level-1];
+        for (var i in map[level-1]) spy['o'+map[level-1][i]] = 0;
+    }
+
+    if ( (spy['o41'] + spy['o42'] + spy['o43']) > 0 ) spy['moon'] = 1;
+    spy['t'] = 50;
+    return spy;
+}
+
+// Обработчики нажатий на кнопки.
+
+function ReplaceReport ()
+{
+    spy = ParseSpyReport ( $("#spytext").val () );
+    if ( spy != undefined ) {
+        ReplacePlanet (SelectedPlanet, spy);
+        UpdatePlanetTab (SelectedPlanet);
+        $("#spytext").val ("Доклад обработан.");
+    }
+    else $("#spytext").val ("Неверный доклад.");
+}
+
+// ----------------- Настройки Империи. ------------------------
+
+function LoadConfig ()
+{
+    cookie = readCookie ("empireconfig");
+    if (cookie == null) { // Сбросить настройки по умолчанию.
+        EmpireConfig['geologe'] = 0;
+        EmpireConfig['engineer'] = 0;
+        EmpireConfig['technocrate'] = 0;
+        EmpireConfig['xspeed'] = 1;
+        EmpireConfig['oldver'] = 0;
+        SaveConfig ();
+        dprint ( "LoadConfig FAIL" );
+    }
+    else {
+        var temp = cookie.split ("|");
+        EmpireConfig['geologe'] = toint (temp[0]);
+        EmpireConfig['engineer'] = toint (temp[1]);
+        EmpireConfig['technocrate'] = toint (temp[2]);
+        EmpireConfig['xspeed'] = toint (temp[3]);
+        EmpireConfig['oldver'] = toint (temp[4]);
+        dprint ( "LoadConfig OK" );
+    }
+}
+
+function SaveConfig ()
+{
+    cookie = EmpireConfig['geologe'] + "|" + EmpireConfig['engineer'] + "|" + EmpireConfig['technocrate'] + "|" +
+                EmpireConfig['xspeed'] + "|" + EmpireConfig['oldver'];
+    createCookie ("empireconfig", cookie, 9999);
+    dprint ( "SaveConfig" );
+}
+
+function SettingsDialog ()
+{
+    LoadConfig ();
+    $("#dialogSettings input[name='engineer']").attr ('checked', EmpireConfig['engineer'] ? true : false);
+    $("#dialogSettings input[name='geologe']").attr ('checked', EmpireConfig['geologe'] ? true : false);
+    $("#dialogSettings input[name='technocrate']").attr ('checked', EmpireConfig['technocrate'] ? true : false);
+    $("#dialogSettings select[name='xspeed']").val (EmpireConfig['xspeed']);
+    $("#dialogSettings input[name='oldver']").attr ('checked', EmpireConfig['oldver'] ? true : false);
+    $("#dialogSettings").dialog('open');
+}
+
+function ApplySettings ()
+{
+    dprint ( "ApplySettings" );
+
+    EmpireConfig['engineer'] = $("#dialogSettings input[name='engineer']").attr ('checked') ? 1 : 0;
+    EmpireConfig['geologe'] = $("#dialogSettings input[name='geologe']").attr ('checked') ? 1 : 0;
+    EmpireConfig['technocrate'] = $("#dialogSettings input[name='technocrate']").attr ('checked') ? 1 : 0;
+    EmpireConfig['xspeed'] = $("#dialogSettings select[name='xspeed']").val ();
+    EmpireConfig['oldver'] = $("#dialogSettings input[name='oldver']").attr ('checked') ? 1 : 0;
+    SaveConfig ();
+    $(this).dialog('close');
+
+    if ( EmpireConfig['oldver'] ) TechNames[124] = loca['LOCA_EXP_TECH'];
+    else TechNames[124] = loca['LOCA_ASTROPHYSICS'];
+    for (i=0; i<pnum; i++) UpdatePlanetTab (i);
+}
+
+// --------------- Инициализация скрипта -------------------------
+
+function InitEmpire ()
+{
+    var template;
+    if ( WideEmpire) template = '<li><a href="#{href}">#{label}</a> <span class="ui-icon ui-icon-close">Remove Tab</span></li>';
+    else template = '<li><a href="#{href}">#{label}</a> </li>';
+
+    dprint ("InitEmpire");
+
+    // Закладки планет.
+    $tabs = $('#tabs').tabs({
+        tabTemplate: template,
+        add: function(event, ui) {
+            dprint ( "Add tab" );
+            var tab_content = $("#tab_content").html ();
+            $(ui.panel).append(tab_content);
+            $tabs.tabs( "option", "selected", ui.index );
+        },
+        select: TabOnSelect
+    });
+    $('#tabs span.ui-icon-close').live('click', function() {
+        if ( pnum > 1) {
+            var index = $('li',$tabs).index($(this).parent());
+            dprint ( "Close tab " + index );
+            $tabs.tabs('remove', index);
+            var html = $(this).parent().html();
+            var match = html.match('tabs-([0-9]+)');
+            RemovePlanet ( tabmapper[parseInt(match[1])] );
+            for (i=parseInt(match[1]); i<tabscounter; i++) tabmapper[i]--;
+            jQuery.each ($("div[planetid]"), function () {
+                var id = $(this).attr ("planetid");
+                $(this).attr ("planetid", id - 1);
+                $("div[planetid='"+(id - 1)+"'] div[id*='prop']").attr ( "id", "prop_" + (id-1) );
+                $("div[planetid='"+(id - 1)+"'] div[id*='prod']").attr ( "id", "prod_" + (id-1) );
+                $("div[planetid='"+(id - 1)+"'] div[id*='cost']").attr ( "id", "cost_" + (id-1) );
+            } );
+            SelectedPlanet = $tabs.tabs( "option", "selected" );
+            if (SelectedPlanet == -1) SelectedPlanet = 0;
+            InitPrices ( SelectedPlanet );
+            RecalcProduction (SelectedPlanet);
+            RecalcCost (SelectedPlanet);
+            UpdatePermalink ();
+        }
+    });
+    $tabs.tabs('remove', 0);
+
+    // Расчёт стоимости.
+    $('#price_lvl').focusout (Recalc);
+
+    // Кнопки.
+    $("#addplanet").click ( function() { AddPlanet(0); UpdatePermalink(); });
+    $("#addmoon").click ( function() { AddPlanet(1); UpdatePermalink(); });
+    $("#spyreplace").click ( function() { ReplaceReport(); });
+
+    // Диалог Настройки.
+    $("#dialogSettings").dialog({   
+        bgiframe: true, modal: true, minHeight: 300, width: 490, zIndex: 3, 
+        autoOpen: false,
+        title: loca['LOCA_SETTINGS_HEAD'],
+        buttons: { "Ok": ApplySettings }   
+    });
+    $("#settings").click ( function() { SettingsDialog (); });
+
+    // Справка.
+    $("#dialogHelp").dialog({   
+        bgiframe: true, modal: true, minHeight: 400, width: 900, zIndex: 3, 
+        title: loca['LOCA_HELP_HEAD'],
+        autoOpen: false
+    });
+    $("#help").click ( function() { $("#dialogHelp").dialog('open'); });
+
+    ParsePermalink ();
+
+    // Локализация статичных элементов.
+    $("#dialogHelp").load ("empire_help_"+lang+".htm");    // загрузить справку
+    $(".lang_btn[lang*='"+lang+"'] img").css ({'border': '1px dotted'});    // выделить флаг рамочкой
+    $(".lang_btn").click ( function() {    // обработчик нажатия на флажок (выбор языка)
+        createCookie ("empirelang", $(this).attr("lang"), 9999);
+        location.reload ();
+    });
+    for ( var str in loca ) {     // перевод строк
+        $("span."+str).text (loca[str]);
+    }
+
+    $("#empire_controls").show ();
+    $("#empire_buttons").show ();
+}
+
+</script>
+
+<!-- ----------------- Тело страницы ------------------------ -->
+
+<div id="full_content" class="ui-widget-content ui-corner-all"> 
+
+<!-- ----------------- Список планет (генерируется) ------------------------ -->
+
+<style type="text/css">
+    #tabs { margin-top: 1em; }
+    #tabs li .ui-icon-close { float: left; margin: 0.4em 0.2em 0 0; cursor: pointer; }
+</style>
+
+<div id="tabs">
+<ul>
+    <li><a href="#tabs-1"></a> </li>
+</ul>
+<div id="tabs-1">
+    <div align="center"><img src="images/empire_loading.gif"></div>
+</div>
+</div>
+
+<div id="tab_title" style="display:none;"> </div>
+<div id="tab_content" style="display:none;"> </div>
+
+<div id="empire_controls" class="ui-widget-content ui-corner-all" style="display:none;">
+
+<table><tr><td>
+
+<!-- ----------------- Расчёт стоимости (частично генерируется) ------------------------ -->
+<table cellspacing="0"><tr>
+<th colspan=6><div id="prices" align="left"> </div>
+</th><td> <input id="price_lvl" class="ui-state-default ui-corner-all centered" size="10" value="0">  </td></tr>
+    <tr><td class='ui-widget-header'><span class="LOCA_COST_CALC">Расчёт стоимости</span></td><td class='ui-widget-header'><nobr><img src="images/red_metall_sm.gif"> <span class="LOCA_M">Металл</span></nobr></td>
+          <td class='ui-widget-header'><nobr><img src="images/red_kristall_sm.gif"> <span class="LOCA_K">Кристалл</span></nobr></td>
+          <td class='ui-widget-header'><nobr><img src="images/red_deuterium_sm.gif"> <span class="LOCA_D">Дейтерий</span></nobr></td>
+          <td class='ui-widget-header'><nobr><span class="LOCA_SC">МТ</span></nobr></td>
+          <td class='ui-widget-header'><nobr><span class="LOCA_LC">БТ</span></nobr></td>
+          <td class='ui-widget-header'><nobr><img src="images/red_energie_sm.gif"> <span class="LOCA_E">Энергия</span></nobr></td></tr>
+    <tr><td id="price_cap1">Стоимость (2)</td><th id="price_m">60</th><th id="price_k">15</th><th id="price_d">0</th><th id="cargo_s">0</th><th id="cargo_l">0</th><th id="price_e">0</th></tr>
+    <tr><td id="price_cap2">Полная стоимость (0...2)</td><th id="price_tm">60</th><th id="price_tk">15</th><th id="price_td">0</th><th id="cargo_ts">0</th><th id="cargo_tl">0</th><th id="price_te">0</th></tr>
+    <tr><th colspan=6><div align=left id="time_cap1">Время (2)</div></th><th id="time_lvl">00:01:47</th></tr>
+    <tr><th colspan=6><div align=left id="time_cap2">Полное время (0...2)</div></th><th id="time_total">00:01:47</th></tr>
+</tr></table>
+
+</td><td>
+
+<!-- ----------------- Вчитка шпионского доклада ------------------------ -->
+<table cellspacing="0" class="ui-widget-content ui-corner-all">
+<tr><td colspan=3 class='ui-widget-header'><span class="LOCA_READIN_HEAD">Вчитывание шпионских докладов</span></td></tr>
+<tr><td></td><td><textarea id="spytext" rows="4" cols="80" class="ui-state-default ui-corner-all" onclick="this.select();"></textarea></td>
+<td style="vertical-align: top;"><table>
+<script>/*<tr><td><a href="#" id="spyadd" class="fg-button ui-state-default ui-corner-all">Добавить</a></td></tr>*/</script>
+<tr><td><a href="#" id="spyreplace" class="fg-button ui-state-default ui-corner-all"><span class="LOCA_READIN">Вчитать</span></a></td></tr>
+<script>/*<tr><td><a href="#" id="spyaddreplace" class="fg-button ui-state-default ui-corner-all">Заменить <br/>и Добавить</a></td></tr>*/</script>
+</table></td></tr>
+</table>
+
+</td></tr></table>
+</div>
+
+<!-- ----------------- Кнопки ------------------------ -->
+<div id="empire_buttons" style="display:none;">
+<p>
+<table width="99%"><tr><td align="left">
+<script type="text/javascript">
+if ( WideEmpire) {
+    document.write ( "<a href=\"#\" id=\"addplanet\" class=\"fg-button fg-button-icon-left ui-state-default ui-corner-all\"><span class=\"ui-icon ui-icon-circle-plus\"></span><span class=\"TITLE_ADD_PLANET\">Добавить планету</span></a>" );
+    document.write ( "<a href=\"#\" id=\"addmoon\" class=\"fg-button fg-button-icon-left ui-state-default ui-corner-all\"><span class=\"ui-icon ui-icon-circle-plus\"></span><span class=\"TITLE_ADD_MOON\">Добавить луну</span></a>" );
+}
+</script>
+<a href="#" id="settings" class="fg-button ui-state-default ui-corner-all"><span class="TITLE_SETTINGS">Настройки</span></a>
+<a href="#" id="help" class="fg-button ui-state-default ui-corner-all"><span class="TITLE_HELP">Справка</span></a>
+</td>
+    <td align="right">
+    <a id="permalink" href="#"><script>document.write("Постоянная ссылка");</script></a>
+</td>
+    <td align="right">
+<a class="lang_btn" lang="bg" href="#"><img width="26px" src="images/Bulgaria.ico" title="Български"></a>
+<a class="lang_btn" lang="en" href="#"><img width="26px" src="images/United-Kingdom.ico" title="English"></a>
+<a class="lang_btn" lang="ru" href="#"><img width="26px" src="images/Russia.ico" title="Русский"></a>
+</td>
+</tr></table>
+</p>
+</div>
+
+</div>
+
+<!-- ----------------- Диалог Настройки. ----------------- -->
+
+<div id="dialogSettings" style="display: none;">
+<center><table class="ui-widget-content ui-corner-all" width="460px">
+<tr><td><div id="engineer_large"></div></td>
+<td style="vertical-align: top; text-align: left;"><input name="engineer" type="checkbox"> <b><span class="LOCA_OPT1">Инженер</span></b> <br/><i><span class="LOCA_OPT1T">Сокращает вдвое потери в обороне, +10% больше энергии </span></i></td></tr>
+<tr><td><div id="geologe_large"></div></td>
+<td style="vertical-align: top; text-align: left;"><p><input name="geologe" type="checkbox"> <b><span class="LOCA_OPT2">Геолог</span></b> <br/><i><span class="LOCA_OPT2T">+10% доход от шахты </span></i></p></td></tr>
+<tr><td><div id="technocrate_large"></div></td>
+<td style="vertical-align: top; text-align: left;"><p><input name="technocrate" type="checkbox"> <b><span class="LOCA_OPT3">Технократ</span></b> <br/><i><span class="LOCA_OPT3T">+2 уровень шпионажа, 25% меньше времени на исследования </span></i></p></td></tr>
+<tr><td>&nbsp;</td><td style="text-align: left;"><input name="oldver" type="checkbox"> <b><span class="LOCA_OPT4">Старый дизайн</span></b> <br/><i><span class="LOCA_OPT4T">Добыча дейтерия, размер хранилищ, солнечные спутники, Астрофизика</span></i></td></tr>
+<tr><td>&nbsp;</td></tr>
+<tr><td style="vertical-align: top; text-align: left;" colspan=2><span class="LOCA_OPT5">Ускорение Вселенной </span><select name="xspeed">
+        <option value="1">1x</option><option value="2">2x</option><option value="3">3x</option><option value="4">4x</option>
+        <option value="5">5x</option><option value="6">6x</option><option value="7">7x</option><option value="8">8x</option>
+        </select></td></tr>
+</table></center>
+</div>
+
+<!-- ---------------- Диалог Справка. ----------------- -->
+
+<div id="dialogHelp" style="display: none;">
+</div>
+
+<div id="DEBUG"></div>
+
+</body>
+</html>

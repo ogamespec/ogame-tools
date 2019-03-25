@@ -1,0 +1,151 @@
+
+body {
+    font-family: "Trebuchet MS", "Helvetica", "Arial",  "Verdana", "sans-serif";
+    font-size: 70%;
+    padding: 0px;
+    margin: 0px;
+    background-color: black;
+    background-image     : url(../images/ogame_2_large.jpg);
+    background-attachment: fixed;
+    background-repeat    : no-repeat;
+    background-position  : top right;
+}
+
+#install_content {
+    top: 50px;
+    left: 50%;
+    margin-left:-125px; 
+    position: absolute;
+    width: 250px;
+    height: 260px;
+}
+#install_content table {
+    padding: 7px;
+}
+
+#home_content {
+    right: 50px;
+    bottom: 50px;
+    position: absolute;
+    width: 650px;
+    height: 150px;
+}
+#home_content table {
+    padding: 5px;
+}
+#version_info {
+    position: absolute;
+    right: 0px;
+    bottom: 0px;
+    width: auto;
+    font-style: italic;
+    font-size: smaller;
+    color: white;
+}
+
+span.header {
+    font-size: 15px;
+}
+
+#pane_menu {
+    left: 30px;
+    top: 30px;
+    position: fixed;
+    width: 110px;
+    height: 150px;
+    background: none;
+    border: 0px;
+}
+#pane_menu table {
+    padding: 0px;
+}
+#pane_menu .wide {
+    width: 100%;
+}
+
+#pane_sig {
+    right: 0px;
+    bottom: 0px;
+    position: fixed;
+    width: 480px;
+    height: auto;
+    z-index: 3;
+}
+#pane_sig table {
+    font-family: "Trebuchet MS", "Helvetica", "Arial",  "Verdana", "sans-serif";
+    font-size: 13px;
+    padding: 7px;
+    width: 100%;
+}
+#pane_sig input {
+    font-family: "Trebuchet MS", "Helvetica", "Arial",  "Verdana", "sans-serif";
+    font-size: 15px;
+    height: 22px;
+}
+
+#pane_uni {
+    top: 5px;
+    left: 5px;
+    position: fixed;
+    width: auto;
+    height: auto;
+    z-index: 2;
+    color: white;
+}
+#pane_uni h2 { 
+    margin: 0px;
+    padding: 0px;
+    font-size: 14px;
+}
+
+#overview_content,
+#pstat_content,
+#astat_content,
+#update_content,
+#legend_content,
+#galaxy_content,
+#help_content {
+    position: absolute;
+    top: 30px;
+    left: 150px;
+    width: 85%;
+    height: auto;
+}
+
+#galaxytab { width: 60%; }
+#galaxytab tr { height: 20px; }
+#galaxytab td { text-align: center; }
+#galaxytab th { font-size: 10px; }
+#galaxytab th[colspan*="5"] { text-align: left; }
+#galaxytab th[colspan*="3"] { text-align: right; }
+#galaxytab img { width: 20px; height: 20px; z-index: 9999;}
+#galaxytab img[src*="activity"] { width: 12px; height: 12px; z-index: 9999;}
+#galaxytab td#debris { font-size: 9px; }
+#galaxytab #galaxyBrowse input { border: 0px; }
+
+.centered { text-align: center; }
+
+/* ----------- Buttons --------------------- */
+
+    .fg-button { outline: 0; margin:0 4px 0 0; padding: .4em 1em; text-decoration:none !important; cursor:pointer; position: relative; text-align: center; zoom: 1; }
+    .fg-button .ui-icon { position: absolute; top: 50%; margin-top: -8px; left: 50%; margin-left: -8px; }
+    a.fg-button { float:left; }
+    button.fg-button { width:auto; overflow:visible; }
+    .fg-button-icon-left { padding-left: 2.1em; }
+    .fg-button-icon-right { padding-right: 2.1em; }
+    .fg-button-icon-left .ui-icon { right: auto; left: .2em; margin-left: 0; }
+    .fg-button-icon-right .ui-icon { left: auto; right: .2em; margin-left: 0; }
+    .fg-button-icon-solo { display:block; width:8px; text-indent: -9999px; }
+    .fg-buttonset { float:left; }
+    .fg-buttonset .fg-button { float: left; }
+    .fg-buttonset-single .fg-button, 
+    .fg-buttonset-multi .fg-button { margin-right: -1px;}
+    .fg-toolbar { padding: .5em; margin: 0;  }
+    .fg-toolbar .fg-buttonset { margin-right:1.5em; padding-left: 1px; }
+    .fg-toolbar .fg-button { font-size: 1em;  }
+
+        div.jHtmlArea .ToolBar ul li a.custom_disk_button 
+        {
+            background: url(../images/disk.png) no-repeat;
+            background-position: 0 0;
+        }

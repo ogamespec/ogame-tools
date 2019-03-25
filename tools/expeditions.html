@@ -1,0 +1,647 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <link rel="icon" type="image/png" href="http://bontchev.my.contact.bg/ogame/favicon.png">
+  <link rel="SHORTCUT ICON" href="http://bontchev.my.contact.bg/ogame/favicon.png">
+  <title>OGame Expeditions Calculator</title>
+</head>
+<body background="background.jpg" bgcolor="midnightblue" bgproperties="fixed">
+  <style type="text/css">
+  <!--
+body
+{
+	color: #E6EBFB;
+	font-family: Tahoma,sans-serif;
+	font-size: 12px;
+	font-weight: bold;
+}
+.cell
+{
+	padding-right: 5px;
+	padding-left: 5px;
+}
+  -->
+  </style>
+<script type="text/javascript">
+
+var Version = "1.0";
+
+var lang = readCookie ('lang');
+if (lang == null) {
+    lang = "en";
+    createCookie ( 'lang', "en", 9999 );
+}
+
+// Localization strings. Use teh Unicode editor and try to arrange language by their ISO-639-1 codes.
+// -------------------------- Русский ---------------------------------
+if (lang == "ru") {
+    var TechNames = {
+     202: "Малый транспорт", 203: "Большой транспорт", 204: "Лёгкий истребитель", 205: "Тяжёлый истребитель", 
+     206: "Крейсер", 207: "Линкор", 208: "Колонизатор", 209: "Переработчик", 210: "Шпионский зонд", 
+     211: "Бомбардировщик", 212: "Солнечный спутник", 213: "Уничтожитель", 214: "Звезда смерти", 215: "Линейный крейсер",
+    };
+    var loca = {
+      LOCA_TITLE: "Калькулятор Экспедиции OGame",
+      LOCA_LANG: "Язык:",
+      LOCA_OLD_DESIGN: "Старый дизайн (v0.84)",
+      LOCA_NEW_DESIGN: "Редизайн (v1.x) ",
+      LOCA_STRONGEST_CAP: "У самого сильного игрока больше 5.000.000 очков",
+      LOCA_SHIP_TYPE: "Тип",
+      LOCA_NUMBER: "Количество",
+      LOCA_CAN_FOUND: "Корабль<br>может быть найден?",
+      LOCA_DISCOVERED: "Найдено кораблей (max):",
+      LOCA_PIRATES: "Самый сильный флот<br>Пиратов (max):",
+      LOCA_ALIENS: "Самый сильный флот<br>Чужих (max):",
+      LOCA_STORAGE: "Грузоподъёмность:",
+      LOCA_MAX_SI: "Единиц структуры<br>найденных кораблей (max):",
+      LOCA_SIMULATE: "Симулировать",
+      LOCA_SI: "Единиц структуры:",
+      LOCA_RES_FIND: "Найдено ресурсов (max):",
+      LOCA_HOLD_TIME: "Время удержания:",
+      LOCA_DELAY: "Задержка (max):",
+      LOCA_DM: "Найдено Тёмной Материи (max):",
+      LOCA_HOURS: "ч.",
+      LOCA_M: "М",
+      LOCA_K: "К",
+      LOCA_D: "Д",
+      LOCA_SMALL: "Мало",
+      LOCA_MEDIUM: "Средне",
+      LOCA_LARGE: "Много",
+      LOCA_YES: "Да",
+      LOCA_NO: "Нет",
+    };
+}
+// -------------------------- English (defaul) ---------------------------------
+else {
+    var TechNames = {
+     202: "Small Cargo", 203: "Large Cargo", 204: "Light Fighter", 205: "Heavy Fighter", 
+     206: "Cruiser", 207: "Battleship", 208: "Colony Ship", 209: "Recycler", 210: "Espionage Probe", 
+     211: "Bomber", 212: "Solar Satellite", 213: "Destroyer", 214: "Death Star", 215: "Battlecruiser",
+    };
+    var loca = {
+      LOCA_TITLE: "OGame Expeditions Calculator",
+      LOCA_LANG: "Language:",
+      LOCA_OLD_DESIGN: "Old Design (v0.84)",
+      LOCA_NEW_DESIGN: "New Design (v1.x) ",
+      LOCA_STRONGEST_CAP: "The strongest player has more than 5.000.000 points",
+      LOCA_SHIP_TYPE: "Ship Type:",
+      LOCA_NUMBER: "Number:",
+      LOCA_CAN_FOUND: "Can a ship of this<br>type be found?",
+      LOCA_DISCOVERED: "Discoverable number<br>of ships (max):",
+      LOCA_PIRATES: "Worst possible Pirate<br>fleet (max):",
+      LOCA_ALIENS: "Worst possible Alien<br>fleet (max):",
+      LOCA_STORAGE: "Storage Capacity:",
+      LOCA_MAX_SI: "Max. SI of found ships:",
+      LOCA_SIMULATE: "Simulate",
+      LOCA_SI: "Structural Integrity (SI):",
+      LOCA_RES_FIND: "Resource find (max):",
+      LOCA_HOLD_TIME: "Holding Time:",
+      LOCA_DELAY: "Possible delay (max):",
+      LOCA_DM: "Dark Matter find (max):",
+      LOCA_HOURS: "hours",
+      LOCA_M: "M",
+      LOCA_K: "C",
+      LOCA_D: "D",
+      LOCA_SMALL: "Small",
+      LOCA_MEDIUM: "Medium",
+      LOCA_LARGE: "Large",
+      LOCA_YES: "Yes",
+      LOCA_NO: "No",
+    };
+}
+
+document.title = loca["LOCA_TITLE"];
+
+function createCookie(name,value,days) {
+    if (days) {
+        var date = new Date();
+        date.setTime(date.getTime()+(days*24*60*60*1000));
+        var expires = "; expires="+date.toGMTString();
+    }
+    else var expires = "";
+    document.cookie = name+"="+value+expires+"; path=/";
+}
+
+function readCookie(name) {
+    var nameEQ = name + "=";
+    var ca = document.cookie.split(';');
+    for(var i=0;i < ca.length;i++) {
+        var c = ca[i];
+        while (c.charAt(0)==' ') c = c.substring(1,c.length);
+        if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+    }
+    return null;
+}
+
+function eraseCookie(name) {
+    createCookie(name,"",-1);
+}
+
+function onLangChange()
+{
+    createCookie ( 'lang', document.lang_form.lang.value, 9999 );
+    window.location.reload ();
+}
+
+// ["Abbreviation", cargoCapacity , structuralIntegrity, expeditionPoints]
+var shipProperties = [
+	["RC",   20000,   16000,   16],
+	["CS",    7500,   30000,   30],
+	["DS", 1000000, 9000000, 9000],
+	// The above 3 can't be found during expeditions and, by themselves, they can't find any ships.
+	["EP",       0,    1000,    1],
+	["SC",    5000,    4000,   12],
+	["LF",      50,    4000,   12],
+	["LC",   25000,   12000,   47],
+	["HF",     100,   10000,  110],
+	["CR",     800,   27000,   47],
+	["BS",    1500,   60000,  160],
+	["BC",     750,   70000,   70],
+	["BM",     500,   75000,   75],
+	["DR",    2000,  110000,  110]
+];
+
+function retPosNum (s)
+{
+	var sxx = '';
+	s += '';
+	var sx = s.toUpperCase ();
+	for (var i = 0; i < sx.length; i++)
+		if (sx.charCodeAt (i) >= 48 && sx.charCodeAt (i) <= 57)
+			sxx += sx.charAt (i);
+	return sxx.replace (/^0+/, "");
+}
+
+function chkPosNum (id)
+{
+	if (id.value != retPosNum (id.value))
+		id.value = retPosNum (id.value);
+	if (id.value == '')
+		id.value = '0';
+}
+
+function chkval (id)
+{
+	if (id.value == '')
+		id.value = '0';
+}
+
+function addDots (n)
+{
+	if (isNaN (n))
+		return "0";
+	n += '';
+	var rgx = /(\d+)(\d{3})/;
+	while (rgx.test (n))
+		n = n.replace (rgx, '$1' + '.' + '$2');
+	return n;
+}
+
+function clearFleet ()
+{
+	for (var i in shipProperties)
+		document.getElementById ("num" + shipProperties [i] [0]).value = 0;
+	compute ();
+}
+
+function compute ()
+{
+	var totalCapacity = 0;
+	var structuralIntegrity = 0;
+	var expeditionPoints = 0;
+	var numShips;
+	var enemyShips;
+	var radio;
+	for (var i in shipProperties)
+	{
+		document.getElementById ("can" + shipProperties [i] [0]).firstChild.nodeValue = loca["LOCA_NO"];
+		document.getElementById ("can" + shipProperties [i] [0]).style.color = "red";
+	}
+	for (var i = 0; i < shipProperties.length; i++)
+	{
+		numShips = parseInt (document.getElementById ("num" + shipProperties [i] [0]).value);
+		totalCapacity += numShips * shipProperties [i] [1];
+		structuralIntegrity += numShips * shipProperties [i] [2];
+		expeditionPoints += numShips * shipProperties [i] [3];
+		if ((i > 2) && (numShips > 0))
+		{
+			for (j = 3; j <= i; j++)
+			{
+				document.getElementById ("can" + shipProperties [j] [0]).firstChild.nodeValue = loca["LOCA_YES"];
+				document.getElementById ("can" + shipProperties [j] [0]).style.color = "lime";
+			}
+			if (i < shipProperties.length - 1)
+			{
+				document.getElementById ("can" + shipProperties [i + 1] [0]).firstChild.nodeValue = loca["LOCA_YES"];
+				document.getElementById ("can" + shipProperties [i + 1] [0]).style.color = "lime";
+			}
+		}
+		var factor;
+		radio = document.getElementsByName ("pirateShips");
+		for (var j in radio)
+			if (radio [j].checked)
+			{
+				factor = parseInt (radio [j].value);
+				break;
+			}
+		enemyShips = Math.floor (factor * numShips / 100);
+		switch (factor)
+		{
+			case 33:
+				if (i == 5)	// Light Fighter
+					enemyShips += 5;
+				break;
+			case 55:
+				if (i == 8)	// Cruiser
+					enemyShips += 3;
+				break;
+			case 88:
+				if (i == 9)	// Battleship
+					enemyShips += 2;
+				break;
+		}
+		document.getElementById ("pirate" + shipProperties [i] [0]).firstChild.nodeValue = addDots (enemyShips);
+		document.getElementById ("pirate" + shipProperties [i] [0]).style.color = (enemyShips > 0) ? "red" : "white";
+		radio = document.getElementsByName ("alienShips");
+		for (var j in radio)
+			if (radio [j].checked)
+			{
+				factor = parseInt (radio [j].value);
+				break;
+			}
+		enemyShips = Math.ceil (factor * numShips / 100);
+		switch (factor)
+		{
+			case 44:
+				if (i == 7)	// Heavy Fighter
+					enemyShips += 5;
+				break;
+			case 66:
+				if (i == 10)	// Battlecruiser
+					enemyShips += 3;
+				break;
+			case 99:
+				if (i == 12)	// Destroyer
+					enemyShips += 2;
+				break;
+		}
+		document.getElementById ("alien" + shipProperties [i] [0]).firstChild.nodeValue = addDots (enemyShips);
+		document.getElementById ("alien" + shipProperties [i] [0]).style.color = (enemyShips > 0) ? "red" : "white";
+	}
+	document.getElementById ("storageCapacity").firstChild.nodeValue = addDots (totalCapacity);
+	var upperLimit = 9000;
+	if (document.getElementById ("highTop").checked)
+		upperLimit = 12000;
+	var maxIntegrity;
+	var findableFleetIntegrity;
+	var factor;
+	if (document.getElementById ("oldVersion").checked)
+	{
+		document.getElementById ("structuralIntegrityLabel").firstChild.nodeValue = "Structural Integrity (SI):";
+		document.getElementById ("structuralIntegrity").firstChild.nodeValue = addDots (structuralIntegrity);
+		maxIntegrity = Math.max (((structuralIntegrity / 1000 <= upperLimit) ? structuralIntegrity : (upperLimit * 1000)), 200000);
+		document.getElementById ("structuralIntegrity").style.color = (structuralIntegrity > maxIntegrity) ? "red" : "white";
+		factor = 200;
+		radio = document.getElementsByName ("numShips");
+		for (var i in radio)
+			if (radio [i].checked)
+			{
+				factor /= parseInt (radio [i].value);
+				break;
+			}
+		findableFleetIntegrity = Math.max (Math.min (structuralIntegrity * factor * 0.001, upperLimit * 100), 10000);
+		document.getElementById ("holdingTimeLabel").firstChild.nodeValue = "Holding Time:";
+	}
+	else
+	{
+		document.getElementById ("structuralIntegrityLabel").firstChild.nodeValue = "Expedition Points:";
+		document.getElementById ("structuralIntegrity").firstChild.nodeValue = addDots (expeditionPoints);
+		maxIntegrity = Math.max (((expeditionPoints <= upperLimit) ? expeditionPoints * 1000 : (upperLimit * 1000)), 200000);
+		document.getElementById ("structuralIntegrity").style.color = (expeditionPoints > upperLimit) ? "red" : "white";
+		factor = 200;
+		radio = document.getElementsByName ("numShips");
+		for (var i in radio)
+			if (radio [i].checked)
+			{
+				factor /= parseInt (radio [i].value);
+				break;
+			}
+		findableFleetIntegrity = Math.max (Math.min (expeditionPoints * factor, upperLimit * 100), 10000);
+		document.getElementById ("holdingTimeLabel").firstChild.nodeValue = "Astrophysics Level:";
+	}
+	var maybeFindMet = 200 * 0.001 * maxIntegrity;
+	if (structuralIntegrity == 0)
+	{
+		findableFleetIntegrity = 0;
+		for (var i in shipProperties)
+		{
+			document.getElementById ("pirate" + shipProperties [i] [0]).firstChild.nodeValue = "0";
+			document.getElementById ("pirate" + shipProperties [i] [0]).style.color = "white";
+			document.getElementById ("alien"  + shipProperties [i] [0]).firstChild.nodeValue = "0";
+			document.getElementById ("alien"  + shipProperties [i] [0]).style.color = "white";
+		}
+	}
+	radio = document.getElementsByName ("findType");
+	for (var i in radio)
+		if (radio [i].checked)
+		{
+			maybeFindMet /= parseInt (radio [i].value);
+			break;
+		}
+	document.getElementById ("storageCapacity").style.color = (maybeFindMet > totalCapacity) ? "red" : "white";
+	var findMet = Math.floor (Math.min (maybeFindMet,     totalCapacity));
+	var findCry = Math.floor (Math.min (maybeFindMet / 2, totalCapacity));
+	var findDeu = Math.floor (Math.min (maybeFindMet / 3, totalCapacity));
+	document.getElementById ("maxFindMet").firstChild.nodeValue = "M: " + addDots (findMet);
+	document.getElementById ("maxFindCry").firstChild.nodeValue = "C: " + addDots (findCry);
+	document.getElementById ("maxFindDeu").firstChild.nodeValue = "D: " + addDots (findDeu);
+	document.getElementById ("maxShipFind").firstChild.nodeValue = addDots (Math.floor (findableFleetIntegrity));
+	for (var i = 3; i < shipProperties.length; i++)
+	{
+		var canFind = (document.getElementById ("can" + shipProperties [i] [0]).firstChild.nodeValue == loca["LOCA_NO"]) ? 0 : addDots (Math.floor (findableFleetIntegrity / shipProperties [i] [2]));
+		document.getElementById ("find" + shipProperties [i] [0]).firstChild.nodeValue = canFind;
+		document.getElementById ("find" + shipProperties [i] [0]).style.color = (canFind > 0) ? "lime" : "white";
+	}
+        var delayTime = document.getElementById ("holdingTime").value;
+	radio = document.getElementsByName ("delayType");
+	for (var i in radio)
+		if (radio [i].checked)
+		{
+			delayTime *= parseInt (radio [i].value);
+			break;
+		}
+	document.getElementById ("delayTime").firstChild.nodeValue = addDots (delayTime) + " " + loca["LOCA_HOURS"];
+	var darkMatterFind;
+	radio = document.getElementsByName ("darkMatter");
+	for (var i in radio)
+		if (radio [i].checked)
+		{
+			darkMatterFind = parseInt (radio [i].value);
+			break;
+		}
+	document.getElementById ("darkMatterFind").firstChild.nodeValue = addDots (darkMatterFind);
+}
+
+function speedSim (enemy)
+{
+	var number;
+	var element;
+	var shipNames = ["SC", "LC", "LF", "HF", "CR", "BS", "CS", "RC", "EP", "BM", "SS", "DR", "DS", "BC"];
+	var url = "http://websim.speedsim.net/?lang=en";
+	for (var i in shipNames)
+	{
+		element = document.getElementById ("num" + shipNames [i]);
+		number = (element != null) ? element.value : 0;
+		if (number > 0)
+			url += "&ship_a0_" + i + "_b="   + number;
+	}
+	for (var i in shipNames)
+	{
+		element = document.getElementById (enemy + shipNames [i]);
+		number = (element != null) ? element.firstChild.nodeValue : 0;
+		if (number > 0)
+			url += "&ship_d0_" + i + "_b="   + number;
+	}
+	window.open (url);
+}
+
+window.onload = compute;
+
+</script>
+
+<div id='lang' style='position: absolute; top:10px; right:10px;'>
+<form name='lang_form'>
+<script>document.write(loca["LOCA_LANG"]);</script> <select name='lang' onchange='onLangChange();'>
+<option value='en'>English</option>
+<option value='ru'>Русский</option>
+</select></form>
+</div>
+
+<center>
+<h1><script>document.write(loca["LOCA_TITLE"]);</script></h1>
+<table border="1" cellpadding="2">
+  <tr>
+    <td class="cell" align="center" colspan="6">
+       <table width="100%">
+         <tr>
+           <td class="cell" align="center">
+             <input type="radio" id="oldVersion" name="version" value="old" CHECKED onclick="compute ();"><script>document.write(loca["LOCA_OLD_DESIGN"]);</script>
+           </td>
+           <td class="cell" align="center">
+             <input type="radio" id="newVersion" name="version" value="new" onclick="compute ();"><script>document.write(loca["LOCA_NEW_DESIGN"]);</script>
+          </td>
+          <td class="cell" align="right">
+             <input type="checkbox" id="highTop" name="highTop" onclick="compute ();">&nbsp;<script>document.write(loca["LOCA_STRONGEST_CAP"]);</script>
+          </td>
+        </tr>
+       </table>
+    </td>
+  </tr>
+  <tr>
+    <td class="cell" align="center"><script>document.write(loca["LOCA_SHIP_TYPE"]);</script></td>
+    <td class="cell" align="center"><button id="clearFleet" name="x" type="button" onclick="clearFleet ();">x</button>&nbsp;<script>document.write(loca["LOCA_NUMBER"]);</script></td>
+    <td class="cell" align="center"><script>document.write(loca["LOCA_CAN_FOUND"]);</script></td>
+    <td>
+      <table cellpadding="0">
+        <tr>
+          <td><input type="radio" name="numShips" value="4" CHECKED onclick="compute ();"><font size="1"><script>document.write(loca["LOCA_SMALL"]);</script></font></td>
+          <td><input type="radio" name="numShips" value="2" onclick="compute ();"><font size="1"><script>document.write(loca["LOCA_MEDIUM"]);</script></font></td>
+          <td><input type="radio" name="numShips" value="1" onclick="compute ();"><font size="1"><script>document.write(loca["LOCA_LARGE"]);</script></font></td>
+        </tr>
+        <tr>
+          <td colspan="3" align="center"><script>document.write(loca["LOCA_DISCOVERED"]);</script></td>
+        </tr>
+      </table>
+    </td>
+    <td>
+      <table cellpadding="0">
+        <tr>
+          <td><input type="radio" name="pirateShips" value="33" CHECKED onclick="compute ();"><font size="1"><script>document.write(loca["LOCA_SMALL"]);</script></font></td>
+          <td><input type="radio" name="pirateShips" value="55" onclick="compute ();"><font size="1"><script>document.write(loca["LOCA_MEDIUM"]);</script></font></td>
+          <td><input type="radio" name="pirateShips" value="88" onclick="compute ();"><font size="1"><script>document.write(loca["LOCA_LARGE"]);</script></font></td>
+        </tr>
+        <tr>
+          <td colspan="3" align="center"><script>document.write(loca["LOCA_PIRATES"]);</script></td>
+        </tr>
+      </table>
+    </td>
+    <td>
+      <table cellpadding="0">
+        <tr>
+          <td><input type="radio" name="alienShips" value="44" CHECKED onclick="compute ();"><font size="1"><script>document.write(loca["LOCA_SMALL"]);</script></font></td>
+          <td><input type="radio" name="alienShips" value="66" onclick="compute ();"><font size="1"><script>document.write(loca["LOCA_MEDIUM"]);</script></font></td>
+          <td><input type="radio" name="alienShips" value="99" onclick="compute ();"><font size="1"><script>document.write(loca["LOCA_LARGE"]);</script></font></td>
+        </tr>
+        <tr>
+          <td colspan="3" align="center"><script>document.write(loca["LOCA_ALIENS"]);</script></td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td class="cell"><script>document.write(TechNames[202]);</script></td>
+    <td class="cell"><input id="numSC" value="0" size="11" style="text-align: right" onblur="chkval (this);" onkeyup="chkPosNum (this); compute ();"></td>
+    <td class="cell" align="center"><span id="canSC">No</span></td>
+    <td class="cell" align="right"><span id="findSC">0</span></td>
+    <td class="cell" align="right"><span id="pirateSC">0</span></td>
+    <td class="cell" align="right"><span id="alienSC">0</span></td>
+  </tr>
+  <tr>
+    <td class="cell"><script>document.write(TechNames[203]);</script></td>
+    <td class="cell"><input id="numLC" value="0" size="11" style="text-align: right" onblur="chkval (this);" onkeyup="chkPosNum (this); compute ();"></td>
+    <td class="cell" align="center"><span id="canLC">No</span></td>
+    <td class="cell" align="right"><span id="findLC">0</span></td>
+    <td class="cell" align="right"><span id="pirateLC">0</span></td>
+    <td class="cell" align="right"><span id="alienLC">0</span></td>
+  </tr>
+  <tr>
+    <td class="cell"><script>document.write(TechNames[204]);</script></td>
+    <td class="cell"><input id="numLF" value="0" size="11" style="text-align: right" onblur="chkval (this);" onkeyup="chkPosNum (this); compute ();"></td>
+    <td class="cell" align="center"><span id="canLF">No</span></td>
+    <td class="cell" align="right"><span id="findLF">0</span></td>
+    <td class="cell" align="right"><span id="pirateLF">0</span></td>
+    <td class="cell" align="right"><span id="alienLF">0</span></td>
+  </tr>
+  <tr>
+    <td class="cell"><script>document.write(TechNames[205]);</script></td>
+    <td class="cell"><input id="numHF" value="0" size="11" style="text-align: right" onblur="chkval (this);" onkeyup="chkPosNum (this); compute ();"></td>
+    <td class="cell" align="center"><span id="canHF">No</span></td>
+    <td class="cell" align="right"><span id="findHF">0</span></td>
+    <td class="cell" align="right"><span id="pirateHF">0</span></td>
+    <td class="cell" align="right"><span id="alienHF">0</span></td>
+  </tr>
+  <tr>
+    <td class="cell"><script>document.write(TechNames[206]);</script></td>
+    <td class="cell"><input id="numCR" value="0" size="11" style="text-align: right" onblur="chkval (this);" onkeyup="chkPosNum (this); compute ();"></td>
+    <td class="cell" align="center"><span id="canCR">No</span></td>
+    <td class="cell" align="right"><span id="findCR">0</span></td>
+    <td class="cell" align="right"><span id="pirateCR">0</span></td>
+    <td class="cell" align="right"><span id="alienCR">0</span></td>
+  </tr>
+  <tr>
+    <td class="cell"><script>document.write(TechNames[207]);</script></td>
+    <td class="cell"><input id="numBS" value="0" size="11" style="text-align: right" onblur="chkval (this);" onkeyup="chkPosNum (this); compute ();"></td>
+    <td class="cell" align="center"><span id="canBS">No</span></td>
+    <td class="cell" align="right"><span id="findBS">0</span></td>
+    <td class="cell" align="right"><span id="pirateBS">0</span></td>
+    <td class="cell" align="right"><span id="alienBS">0</span></td>
+  </tr>
+  <tr>
+    <td class="cell"><script>document.write(TechNames[208]);</script></td>
+    <td class="cell"><input id="numCS" value="0" size="11" style="text-align: right" onblur="chkval (this);" onkeyup="chkPosNum (this); compute ();"></td>
+    <td class="cell" align="center"><span id="canCS">No</span></td>
+    <td class="cell" align="right">0</td>
+    <td class="cell" align="right"><span id="pirateCS">0</span></td>
+    <td class="cell" align="right"><span id="alienCS">0</span></td>
+  </tr>
+  <tr>
+    <td class="cell"><script>document.write(TechNames[209]);</script></td>
+    <td class="cell"><input id="numRC" value="0" size="11" style="text-align: right" onblur="chkval (this);" onkeyup="chkPosNum (this); compute ();"></td>
+    <td class="cell" align="center"><span id="canRC">No</span></td>
+    <td class="cell" align="right">0</td>
+    <td class="cell" align="right"><span id="pirateRC">0</span></td>
+    <td class="cell" align="right"><span id="alienRC">0</span></td>
+  </tr>
+  <tr>
+    <td class="cell"><script>document.write(TechNames[210]);</script></td>
+    <td class="cell"><input id="numEP" value="0" size="11" style="text-align: right" onblur="chkval (this);" onkeyup="chkPosNum (this); compute ();"></td>
+    <td class="cell" align="center"><span id="canEP">No</span></td>
+    <td class="cell" align="right"><span id="findEP">0</span></td>
+    <td class="cell" align="right"><span id="pirateEP">0</span></td>
+    <td class="cell" align="right"><span id="alienEP">0</span></td>
+  </tr>
+  <tr>
+    <td class="cell"><script>document.write(TechNames[211]);</script></td>
+    <td class="cell"><input id="numBM" value="0" size="11" style="text-align: right" onblur="chkval (this);" onkeyup="chkPosNum (this); compute ();"></td>
+    <td class="cell" align="center"><span id="canBM">No</span></td>
+    <td class="cell" align="right"><span id="findBM">0</span></td>
+    <td class="cell" align="right"><span id="pirateBM">0</span></td>
+    <td class="cell" align="right"><span id="alienBM">0</span></td>
+  </tr>
+  <tr>
+    <td class="cell"><script>document.write(TechNames[213]);</script></td>
+    <td class="cell"><input id="numDR" value="0" size="11" style="text-align: right" onblur="chkval (this);" onkeyup="chkPosNum (this); compute ();"></td>
+    <td class="cell" align="center"><span id="canDR">No</span></td>
+    <td class="cell" align="right"><span id="findDR">0</span></td>
+    <td class="cell" align="right"><span id="pirateDR">0</span></td>
+    <td class="cell" align="right"><span id="alienDR">0</span></td>
+  </tr>
+  <tr>
+    <td class="cell"><script>document.write(TechNames[214]);</script></td>
+    <td class="cell"><input id="numDS" value="0" size="11" style="text-align: right" onblur="chkval (this);" onkeyup="chkPosNum (this); compute ();"></td>
+    <td class="cell" align="center"><span id="canDS">No</span></td>
+    <td class="cell" align="right">0</td>
+    <td class="cell" align="right"><span id="pirateDS">0</span></td>
+    <td class="cell" align="right"><span id="alienDS">0</span></td>
+  </tr>
+  <tr>
+    <td class="cell"><script>document.write(TechNames[215]);</script></td>
+    <td class="cell"><input id="numBC" value="0" size="11" style="text-align: right" onblur="chkval (this);" onkeyup="chkPosNum (this); compute ();"></td>
+    <td class="cell" align="center"><span id="canBC">No</span></td>
+    <td class="cell" align="right"><span id="findBC">0</span></td>
+    <td class="cell" align="right"><span id="pirateBC">0</span></td>
+    <td class="cell" align="right"><span id="alienBC">0</span></td>
+  </tr>
+  <tr>
+    <td class="cell"><script>document.write(loca["LOCA_STORAGE"]);</script></td>
+    <td class="cell" align="right"><span id="storageCapacity">0</span></td>
+    <td class="cell"><script>document.write(loca["LOCA_MAX_SI"]);</script></td>
+    <td class="cell" align="right"><span id="maxShipFind" style="color: lime">0</span></td>
+    <td class="cell" align="center"><button type="button" onclick="speedSim ('pirate');"><script>document.write(loca["LOCA_SIMULATE"]);</script></button></td>
+    <td class="cell" align="center"><button type="button" onclick="speedSim ('alien');"><script>document.write(loca["LOCA_SIMULATE"]);</script></button></td>
+  </tr>
+  <tr>
+    <td class="cell"><span id="structuralIntegrityLabel"><script>document.write(loca["LOCA_SI"]);</script></span></td>
+    <td class="cell" align="right"><span id="structuralIntegrity">0</span></td>
+    <td>
+      <table cellpadding="0">
+        <tr>
+          <td><input type="radio" name="findType" value="4" CHECKED onclick="compute ();"><font size="1"><script>document.write(loca["LOCA_SMALL"]);</script></font></td>
+          <td><input type="radio" name="findType" value="2" onclick="compute ();"><font size="1"><script>document.write(loca["LOCA_MEDIUM"]);</script></font></td>
+          <td><input type="radio" name="findType" value="1" onclick="compute ();"><font size="1"><script>document.write(loca["LOCA_LARGE"]);</script></font></td>
+        </tr>
+        <tr>
+          <td colspan="3" align="center"><script>document.write(loca["LOCA_RES_FIND"]);</script></td>
+        </tr>
+      </table>
+    </td>
+    <td class="cell" align="right"><span id="maxFindMet" style="color: lime"><script>document.write(loca["LOCA_M"]);</script>: 0</span></td>
+    <td class="cell" align="right"><span id="maxFindCry" style="color: lime"><script>document.write(loca["LOCA_K"]);</script>: 0</span></td>
+    <td class="cell" align="right"><span id="maxFindDeu" style="color: lime"><script>document.write(loca["LOCA_D"]);</script>: 0</span></td>
+  <tr>
+    <td class="cell"><span id="holdingTimeLabel"><script>document.write(loca["LOCA_HOLD_TIME"]);</script></span></td>
+    <td class="cell"><input id="holdingTime" value="1" size="11" style="text-align: right" onblur="chkval (this);" onkeyup="chkPosNum (this); compute ();"></td>
+    <td>
+      <table cellpadding="0">
+        <tr>
+          <td><input type="radio" name="delayType" value="2" CHECKED onclick="compute ();"><font size="1"><script>document.write(loca["LOCA_SMALL"]);</script></font></td>
+          <td><input type="radio" name="delayType" value="3" onclick="compute ();"><font size="1"><script>document.write(loca["LOCA_MEDIUM"]);</script></font></td>
+          <td><input type="radio" name="delayType" value="5" onclick="compute ();"><font size="1"><script>document.write(loca["LOCA_LARGE"]);</script></font></td>
+        </tr>
+        <tr>
+          <td colspan="3" align="center"><script>document.write(loca["LOCA_DELAY"]);</script></td>
+        </tr>
+      </table>
+    </td>
+    <td class="cell" align="right"><span id="delayTime" style="color: lime">0 </span></td>
+    <td>
+      <table cellpadding="0">
+        <tr>
+          <td><input type="radio" name="darkMatter" value="200" CHECKED onclick="compute ();"><font size="1"><script>document.write(loca["LOCA_SMALL"]);</script></font></td>
+          <td><input type="radio" name="darkMatter" value="500" onclick="compute ();"><font size="1"><script>document.write(loca["LOCA_MEDIUM"]);</script></font></td>
+          <td><input type="radio" name="darkMatter" value="2076" onclick="compute ();"><font size="1"><script>document.write(loca["LOCA_LARGE"]);</script></font></td>
+        </tr>
+        <tr>
+          <td colspan="3" align="center"><script>document.write(loca["LOCA_DM"]);</script></td>
+        </tr>
+      </table>
+    </td>
+    <td class="cell" align="right"><span id="darkMatterFind" style="color: lime">200</span></td>
+  </tr>
+</table>
+<p>Copyright &copy; 2009 by <a href="mailto:vbontchev@yahoo.com" style="color: white">Vesselin Bontchev</a> (v. <script>document.write(Version);</script>)</p>
+
+</center>
+</body>
+</html>
